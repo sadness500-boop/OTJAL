@@ -1,23 +1,29 @@
 # OTJAL
 
 **나에게 잘 맞는 옷, OTJAL이 찾아준다.**
-AI 개인 맞춤형 의류 추천·3D 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.3.0**
+AI 개인 맞춤형 의류 추천·실사 모델 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.4.0**
+
+## 🌐 웹 버전 (크롬·엣지·사파리)
+
+- **https://sadness500-boop.github.io/OTJAL/** — GitHub Pages (저장소 Settings → Pages에서 `main` 브랜치 `/docs` 폴더로 한 번 켜면 열려요)
+- 크롬·엣지에서 주소창의 설치 아이콘을 누르면 PC·휴대폰에 앱처럼 설치돼요(PWA). 한 번 열면 오프라인에서도 동작합니다.
+- 웹 파일: [`docs/`](docs/) · 빌드: `python3 tools/build-web.py`
 
 ## 📱 Android 앱 다운로드
 
 - **[OTJAL.apk 내려받기](https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk)** (항상 최신 버전)
-- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.3.0.apk`)
+- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.4.0.apk`)
 - Android 5.0 이상 · 설치 시 "출처를 알 수 없는 앱 설치"를 한 번 허용해야 해요. iPhone은 아직 지원하지 않아요.
 
 ## 주요 기능
 
 | 화면 | 내용 |
 |---|---|
-| 오늘의 PICK | 상황(출근·데이트·여행 등)을 고르면 코디 한 벌을 골라 3D 피규어에 입혀 보여줌 |
+| 오늘의 PICK | 상황(출근·데이트·여행 등)을 고르면 코디 한 벌을 골라 실사 모델에 입혀 보여줌 |
 | 내 스타일 | 체형 14개 항목(키·몸무게·어깨·가슴·가슴밑·팔뚝·팔길이·허리·엉덩이·허벅지·종아리·다리길이·발·발볼), 골격·어깨 형태·피부톤·헤어, 부위별 핏·기장·패턴·소재·피하는 색/아이템, 종류별 예산, 추천 기준 중요도 |
 | 맞춤 추천 | 옷 종류별 TOP 3, 추천 이유·점수, 카드마다 3D 착용 미리보기 |
 | 상세 | 소재·핏·시즌·세탁·사이즈 실측표, 정면·측면·후면 3D 착용 이미지, 24개 쇼핑몰 검색 연결 |
-| 피팅룸 | 내 체형 3D 피규어에 사이즈별로 입혀 보기(360° 회전), 부위별 핏 표시 |
+| 피팅룸 | 내 체형과 닮은 실사 모델(남녀 각 5명)에 사이즈별로 입혀 보기, 부위별 핏 표시, 3D 회전 보기 |
 | 상단 메뉴 | 앱 다운로드 QR · 친구 추천(추천코드·공유) · 주간/야간/시스템 화면 |
 
 추천 점수 기본 비율: 취향 30 · 보유 옷 조화 20 · 예산 15 · 체형·핏 15 · 상황·계절 10 · 색상 10 (설정에서 조절 가능)
@@ -35,7 +41,9 @@ AI 개인 맞춤형 의류 추천·3D 가상 피팅·쇼핑 연결 서비스 —
 ## 폴더 구성
 
 ```
-web/index.html        앱 화면 전체 (단일 파일, 웹 버전)
+web/index.html        앱 화면 원본 (단일 파일)
+docs/                 웹 버전(PWA) — GitHub Pages 배포용
+tools/build-web.py    웹 버전 빌드 스크립트
 android/              Android WebView 앱 (Gradle 없이 빌드)
   build-apk.sh        APK 빌드 스크립트
   libs/               3D(three.js r128)·QR 라이브러리 — 앱에 오프라인 포함
@@ -54,5 +62,6 @@ KEYSTORE=/경로/otjal-release.keystore KS_PASS=비밀번호 ./build-apk.sh
 
 ## 라이선스 · 크레딧
 
-- three.js (MIT) · qrcode-generator (MIT)
+- three.js (MIT) · qrcode-generator (MIT) · Great Vibes 폰트 (OFL)
+- 실사 체형 모델 이미지: 서비스 기획자가 제공한 사진을 배경 제거·보정해 사용
 - Designed & Developed by **Rat Rae Choi**

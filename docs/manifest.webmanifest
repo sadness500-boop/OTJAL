@@ -1,0 +1,25 @@
+{
+ "name": "OTJAL",
+ "short_name": "OTJAL",
+ "description": "AI 퍼스널 스타일리스트 — 실사 모델 피팅·맞춤 추천·24개 쇼핑몰 연결",
+ "lang": "ko",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#FFFFFF",
+ "theme_color": "#FFFFFF",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

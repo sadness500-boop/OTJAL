@@ -470,7 +470,7 @@ const Fig3D = (() => {
     if (ctl) ctl.addEventListener("change",()=>{ L.dirty=true; });
     const loop=()=>{ requestAnimationFrame(loop); if (!L.host||!L.host.isConnected) return; if (ctl) ctl.update(); if (L.dirty||ctl&&ctl.autoRotate){ r.render(sc,cam); L.dirty=false; } };
     loop(); window.addEventListener("resize",()=>{ if (L.host&&L.host.isConnected) sizeLive(); }); return L; }
-  function sizeLive(){ const w=L.host.clientWidth||300, h=L.host.clientHeight||400; L.r.setPixelRatio(Math.min(2,window.devicePixelRatio||1)); L.r.setSize(w,h,false); L.cam.aspect=w/h; L.cam.updateProjectionMatrix(); L.dirty=true; }
+  function sizeLive(){ const el=L.stage||L.host, w=el.clientWidth||300, h=el.clientHeight||400; L.r.setPixelRatio(Math.min(2,window.devicePixelRatio||1)); L.r.setSize(w,h,false); L.cam.aspect=w/h; L.cam.updateProjectionMatrix(); L.dirty=true; }
   function setFig(cfg, reframe){ if (L.fig){ L.sc.remove(L.fig); disposeTree(L.fig); }
     L.fig=build(cfg.g,cfg.p,cfg.look||{},cfg.sizes||{}); L.sc.add(L.fig); L.cfg=cfg;
     if (reframe){ const H=cfg.p.height/100, {ty}=frame(L.cam,H,L.cam.aspect,cfg.theta??0.28); if (L.ctl){ L.ctl.target.set(0,ty,0); L.ctl.minDistance=L.cam.position.length()*0.35; L.ctl.maxDistance=L.cam.position.length()*1.4; L.ctl.update(); } }
@@ -478,11 +478,11 @@ const Fig3D = (() => {
   function view(theta){ if (!L||!L.ctl) return; const t=L.ctl.target, d=L.cam.position.distanceTo(t); L.cam.position.set(t.x+Math.sin(theta)*d, t.y+L.cfg.p.height/100*0.03, t.z+Math.cos(theta)*d); L.ctl.update(); L.dirty=true;
     if (L.host) L.host.querySelectorAll("[data-fview]").forEach(b=>b.setAttribute("aria-pressed", Math.abs(+b.dataset.fview-theta)<0.01)); }
   function mountLive(host, cfg, opts={}){ host.innerHTML=`<div class="fload"></div>`;
-    load().then(()=>{ if (!host.isConnected) return; const l=ensureLive(); l.host=host; host.innerHTML=""; host.appendChild(l.r.domElement);
-      const bar=document.createElement("div"); bar.className="fctl";
-      bar.innerHTML=`<button data-fview="0" aria-pressed="false">정면</button><button data-fview="1.5708" aria-pressed="false">측면</button><button data-fview="3.1416" aria-pressed="false">후면</button><button data-fspin aria-pressed="${!!(l.ctl&&l.ctl.autoRotate)}">회전</button>`;
-      host.appendChild(bar);
-      const bd=document.createElement("div"); bd.className="fbadge"; bd.textContent=`3D 실사 바디 · ${cfg.p.height}cm · 드래그로 360°`; host.appendChild(bd);
+    load().then(()=>{ if (!host.isConnected) return; const l=ensureLive(); l.host=host; host.innerHTML="";
+      const st=document.createElement("div"); st.className="fstage"; st.appendChild(l.r.domElement); host.appendChild(st); l.stage=st;
+      const fb=document.createElement("div"); fb.className="fbar";
+      fb.innerHTML=`<span class="fbadge">3D 실사 바디 · ${cfg.p.height}cm · 드래그 360°</span><div class="fctl"><button data-fview="0" aria-pressed="false">정면</button><button data-fview="1.5708" aria-pressed="false">측면</button><button data-fview="3.1416" aria-pressed="false">후면</button><button data-fspin aria-pressed="${!!(l.ctl&&l.ctl.autoRotate)}">회전</button></div>`;
+      host.appendChild(fb);
       sizeLive(); setFig(cfg,true); }).catch(()=>{ host.innerHTML=cfg.fb||""; }); }
   function update(cfg){ if (!D||!L||!L.host||!L.host.isConnected) return false; setFig(Object.assign({},L.cfg,cfg), false); return true; }
   document.addEventListener("click", e=>{ const b=e.target.closest("[data-fview],[data-fspin]"); if (!b||!L) return; e.stopPropagation();

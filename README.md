@@ -1,7 +1,7 @@
 # OTJAL
 
 **나에게 잘 맞는 옷, OTJAL이 찾아준다.**
-AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.5.2**
+AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.5.3**
 
 ## 🌐 웹 버전 (크롬·엣지·사파리)
 
@@ -12,7 +12,7 @@ AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결
 ## 📱 Android 앱 다운로드
 
 - **[OTJAL.apk 내려받기](https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk)** (항상 최신 버전)
-- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.5.2.apk`)
+- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.5.3.apk`)
 - Android 5.0 이상 · 설치 시 "출처를 알 수 없는 앱 설치"를 한 번 허용해야 해요. iPhone은 아직 지원하지 않아요.
 
 ## 주요 기능

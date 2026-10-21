@@ -1,0 +1,1660 @@
+<title>OTJAL</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<style>
+/* OTJAL v0.3 — bright, refined: pure white + blush mist, rose accent used sparingly, champagne hairlines.
+   Layout: slim utility bar → brand bar → tab strip; each tab is a working screen with a live 3D figure stage. */
+:root{
+  --bg:#FFFFFF; --bg2:#FBF6F4; --surface:#FFFFFF; --ink:#27262B; --ink2:#4A4850; --muted:#8C8892; --line:#EFE7E4; --chip:#F8F2F0;
+  --accF:#E0577D; --accM:#4467D8; --acc:var(--accF); --accSoft:#FCEBF0; --accSoftM:#ECF0FC; --soft:var(--accSoft);
+  --gold:#C9A27C; --onAcc:#FFFFFF;
+  --mq:#EADDD3; --mqLine:#D6C4B7; --hair:#4A3528;
+  --good:#2E8A62; --warn:#B98318; --bad:#D04545;
+  --stage1:#FFFFFF; --stage2:#F6ECE8;
+  --sh:0 1px 2px rgba(39,38,43,.04),0 12px 32px rgba(39,38,43,.06);
+  --f-display:"Cormorant Garamond","Noto Serif KR",Georgia,serif;
+  --f-body:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141317; --bg2:#19181D; --surface:#1D1C21; --ink:#F2EEF0; --ink2:#D5D0D6; --muted:#A29DA6; --line:#2E2C33; --chip:#25232A;
+  --accF:#F27A9B; --accM:#829DFF; --accSoft:#3A2530; --accSoftM:#232B45; --gold:#D9B894;
+  --mq:#5C4E47; --mqLine:#77655C; --hair:#120E0D; --good:#61C894; --warn:#E3B04B; --bad:#FF7272;
+  --stage1:#24222A; --stage2:#1A191E; --sh:0 1px 2px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.3); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#141317; --bg2:#19181D; --surface:#1D1C21; --ink:#F2EEF0; --ink2:#D5D0D6; --muted:#A29DA6; --line:#2E2C33; --chip:#25232A;
+  --accF:#F27A9B; --accM:#829DFF; --accSoft:#3A2530; --accSoftM:#232B45; --gold:#D9B894;
+  --mq:#5C4E47; --mqLine:#77655C; --hair:#120E0D; --good:#61C894; --warn:#E3B04B; --bad:#FF7272;
+  --stage1:#24222A; --stage2:#1A191E; --sh:0 1px 2px rgba(0,0,0,.3),0 12px 32px rgba(0,0,0,.3); color-scheme:dark }
+:root[data-g="M"]{ --acc:var(--accM); --soft:var(--accSoftM); --lgF:0; --lgM:1 }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;font-weight:400;letter-spacing:-.01em}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+a{color:var(--acc)}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
+.util{display:flex;justify-content:flex-end;align-items:center;gap:4px;padding-block:6px 0;font-size:12.5px}
+.ubtn{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--ink2);padding:5px 10px;border-radius:999px;font-weight:500}
+.ubtn:hover{background:var(--chip);color:var(--ink)}
+.ubtn svg{width:15px;height:15px}
+.seg{display:inline-flex;background:var(--chip);border-radius:999px;padding:2px;margin-left:4px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:999px;font-size:12px;color:var(--muted);font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.bar{display:flex;align-items:center;gap:16px;padding-block:6px 4px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink);border:0;background:none;padding:0}
+.brand svg{width:36px;height:36px;flex:none}
+.wm{display:flex;align-items:baseline;gap:8px;line-height:1}
+.wm b{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:.16em}
+.ver{font-size:10.5px;font-weight:500;color:var(--acc);background:var(--soft);border-radius:999px;padding:2px 7px;letter-spacing:.02em;align-self:center}
+.spacer{flex:1}
+.gsw{display:flex;background:var(--chip);border-radius:999px;padding:3px}
+.gsw button{border:0;background:none;padding:6px 16px;border-radius:999px;font-weight:500;font-size:13px;color:var(--muted)}
+.gsw button[aria-pressed="true"]{background:var(--surface);color:var(--acc);box-shadow:0 1px 4px rgba(0,0,0,.08);font-weight:700}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{border:0;background:none;padding:10px 14px 11px;font-weight:500;font-size:14.5px;color:var(--muted);white-space:nowrap;position:relative}
+nav.tabs button:hover{color:var(--ink)}
+nav.tabs button[aria-current="page"]{color:var(--ink);font-weight:700}
+nav.tabs button[aria-current="page"]::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:2px;border-radius:2px;background:var(--acc)}
+nav.tabs .cnt{font-size:10.5px;background:var(--acc);color:var(--onAcc);border-radius:99px;padding:0 6px;margin-left:5px;font-weight:700}
+
+main{padding-block:28px 64px}
+section.tab{display:flex;flex-direction:column;gap:30px}
+h1,h2,h3{text-wrap:balance;margin:0;letter-spacing:-.035em;font-weight:700}
+h2{font-size:clamp(24px,3vw,30px)}
+h3{font-size:18px}
+.eyebrow{font-family:var(--f-display);font-style:italic;font-weight:600;font-size:16px;letter-spacing:.04em;color:var(--acc)}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.note{font-size:12.5px;color:var(--muted);line-height:1.65}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.head p{margin:6px 0 0;max-width:62ch}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:9px 18px;font-weight:500;font-size:14px;text-decoration:none;color:var(--ink);transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--onAcc);font-weight:700}
+.btn.pri:hover{filter:brightness(1.06);color:var(--onAcc)}
+.btn.big{padding:15px 28px;font-size:16px}
+.btn.sm{padding:6px 12px;font-size:12.5px}
+.btn[aria-pressed="true"]{border-color:var(--acc);color:var(--acc);background:var(--soft)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:13.5px;font-weight:500;color:var(--ink2)}
+.chip:hover{border-color:var(--acc)}
+.chip[aria-pressed="true"]{background:var(--soft);border-color:var(--acc);color:var(--acc);font-weight:700}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;background:var(--chip);border-radius:999px;padding:2px 9px;color:var(--ink2)}
+.tag.ok{color:var(--good)} .tag.loose{color:var(--warn)} .tag.bad{color:var(--bad)}
+.sticker{display:inline-flex;align-items:center;font-family:var(--f-display);font-style:italic;font-weight:700;font-size:15px;letter-spacing:.03em;background:var(--surface);color:var(--acc);border:1px solid var(--line);padding:2px 12px;border-radius:999px;box-shadow:var(--sh)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:var(--sh)}
+
+/* 3D figure */
+.fig{position:relative;width:100%;background:radial-gradient(120% 80% at 50% 25%,var(--stage1),var(--stage2));border-radius:18px;overflow:hidden;display:grid;place-items:center}
+.fig canvas{display:block;width:100%!important;height:100%!important;touch-action:pan-y}
+.fig img{display:block;width:100%;height:100%;object-fit:contain}
+.fig .av{width:auto;height:92%;max-width:100%}
+.fig .fctl{position:absolute;right:10px;bottom:10px;display:flex;gap:4px}
+.fig .fctl button{border:1px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:999px;font-size:11.5px;padding:4px 10px}
+.fig .fctl button[aria-pressed="true"]{color:var(--acc);border-color:var(--acc)}
+.fig .fbadge{position:absolute;right:12px;top:12px;font-size:11px;color:var(--muted);background:color-mix(in srgb,var(--surface) 80%,transparent);padding:2px 9px;border-radius:999px}
+.fig .fload{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--acc);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fig.live{aspect-ratio:3/4.1;max-height:640px}
+.fig.card{aspect-ratio:3/4.2;border-radius:0}
+.fig.look{aspect-ratio:3/4.4;border-radius:14px}
+
+/* home */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;align-items:stretch;background:linear-gradient(135deg,var(--bg2),var(--surface) 70%);border:1px solid var(--line);border-radius:28px;padding:28px}
+.hero-l{display:flex;flex-direction:column;gap:20px;justify-content:center;padding:12px 8px}
+.hero h1{font-size:clamp(29px,3.9vw,48px);font-weight:700;line-height:1.12;letter-spacing:-.045em}
+.hero h1 em{font-style:normal;color:var(--acc);font-family:var(--f-display);font-weight:700;letter-spacing:.02em}
+.hero p.lead{font-size:16px;color:var(--ink2);margin:0;max-width:44ch;font-weight:400}
+.stage{position:relative;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;align-items:center}
+.stage>.sticker{position:absolute;top:12px;left:12px;z-index:2}
+.lookList{display:flex;flex-direction:column;gap:9px;min-width:0}
+.lookItem{display:flex;gap:10px;align-items:center;font-size:13px;min-width:0}
+.lookItem .th{width:44px;height:44px;flex:none;background:var(--chip);border-radius:12px;display:grid;place-items:center}
+.lookItem .th svg{width:34px;height:34px}
+.lookItem b{display:block;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.total{font-size:13.5px;border-top:1px solid var(--line);padding-top:9px;display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.total b{font-weight:700}
+.pain{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.pain div{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 20px}
+.pain b{font-size:16px;display:block;margin-bottom:4px;font-weight:700}
+.pain i{font-family:var(--f-display);font-style:italic;color:var(--gold);font-size:22px;display:block;line-height:1}
+
+/* product grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--sh);transition:transform .2s}
+.card:hover{transform:translateY(-2px)}
+.card .img{position:relative;background:var(--chip);border:0;padding:0;width:100%;cursor:pointer;color:inherit;display:grid;grid-template-columns:.8fr 1.2fr;align-items:end}
+.card .img .g{display:grid;place-items:center;height:100%}
+.card .img .g svg{width:80%;height:auto}
+.card .img .a{height:100%}
+.card .img .a .fig{height:100%;background:transparent}
+.card .score{position:absolute;top:10px;right:10px;background:var(--surface);border-radius:999px;padding:3px 10px;font-size:12px;font-variant-numeric:tabular-nums;box-shadow:0 1px 3px rgba(0,0,0,.06);z-index:2}
+.card .score b{color:var(--acc)}
+.card .ex{position:absolute;bottom:8px;left:12px;font-size:10.5px;color:var(--muted);z-index:2}
+.card .rank{position:absolute;top:10px;left:10px;z-index:2;font-size:13px;padding:1px 10px}
+.card .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.card .nm{font-weight:700;font-size:15.5px;line-height:1.35;letter-spacing:-.03em}
+.card .pr{font-size:14.5px;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.card .why{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
+.card .why span::before{content:"· ";color:var(--acc);font-weight:700}
+.card .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.bars{display:grid;grid-template-columns:auto 1fr auto;gap:4px 8px;font-size:11.5px;align-items:center;margin-top:6px}
+.bars i{display:block;height:5px;border-radius:9px;background:var(--chip);overflow:hidden}
+.bars i b{display:block;height:100%;background:var(--acc)}
+.bars em{font-style:normal;color:var(--muted);font-variant-numeric:tabular-nums}
+details summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.search{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.input{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:11px 14px;width:100%}
+.sites{display:flex;flex-wrap:wrap;gap:6px}
+.site{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500;color:var(--ink);text-decoration:none;background:var(--surface)}
+.site:hover{border-color:var(--acc);color:var(--acc)}
+.site i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.sg{display:flex;flex-direction:column;gap:6px}
+.sg>span{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+
+/* coordi */
+.looks{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.look{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;box-shadow:var(--sh)}
+.look h3{font-size:16px}
+
+/* fitting */
+.fit{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:22px;align-items:start}
+.fitStage{position:sticky;top:132px;display:flex;flex-direction:column;gap:12px}
+.slots{display:flex;flex-direction:column;gap:10px}
+.slot{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px;display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;align-items:center}
+.slot .th{width:58px;height:58px;background:var(--chip);border-radius:14px;display:grid;place-items:center}
+.slot .th svg{width:46px;height:46px}
+.slot .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.slot select{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 8px;max-width:100%;min-width:0}
+.sizes{display:flex;gap:4px;flex-wrap:wrap}
+.sizes button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:500}
+.sizes button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.sizes button.rec{box-shadow:inset 0 -2px 0 var(--acc)}
+.av{width:100%;height:auto;display:block}
+
+/* profile */
+.prof{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+.fs{display:flex;flex-direction:column;gap:14px}
+.fs h3{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.fs h3 small{font-size:12.5px;color:var(--muted);font-weight:400;letter-spacing:0}
+.sub{font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:6px}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:500}
+.field input,.field select{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 11px;color:var(--ink);font-size:14px;width:100%;font-variant-numeric:tabular-nums}
+.rng{display:grid;grid-template-columns:92px minmax(0,1fr) 44px;gap:10px;align-items:center;font-size:13px}
+.rng input{width:100%;accent-color:var(--acc)}
+.rng output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.sw{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);padding:0;position:relative}
+.sw[aria-pressed="true"]{border-color:var(--acc);box-shadow:0 0 0 2px var(--surface) inset}
+.sw[aria-pressed="true"]::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;font-weight:800;color:#fff;text-shadow:0 0 3px rgba(0,0,0,.6)}
+.sw.no[aria-pressed="true"]::after{content:"✕"}
+.swl{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--muted);width:54px;text-align:center}
+.side{position:sticky;top:132px;display:flex;flex-direction:column;gap:12px}
+.closet{display:flex;flex-wrap:wrap;gap:6px}
+.closet .tag button{border:0;background:none;padding:0 0 0 4px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid var(--line)}
+.measure{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
+.mbox{border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.mbox label{font-size:12.5px;color:var(--muted);font-weight:500;display:flex;justify-content:space-between}
+.mbox label b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.mbox input[type=range]{width:100%;accent-color:var(--acc)}
+
+/* wish */
+.wl{display:flex;flex-direction:column;gap:8px}
+.wrow{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 12px}
+.wrow .th{width:56px;height:56px;background:var(--chip);border-radius:12px;display:grid;place-items:center}
+.wrow .th svg{width:44px;height:44px}
+
+/* brand */
+.bgrid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+.logoBig{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.logoBig svg{width:110px;height:110px}
+.logoBig .wm b{font-size:72px}
+.icons{display:flex;gap:16px;flex-wrap:wrap}
+.icons div{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.icons svg{width:80px;height:80px}
+.slogan{font-size:clamp(26px,3.6vw,40px);font-weight:700;line-height:1.25;letter-spacing:-.04em}
+.slist{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.slist li{display:flex;gap:12px;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:10px}
+.slist li span{font-size:11.5px;color:var(--muted);min-width:70px}
+.slist li b{font-size:18px;font-weight:700;letter-spacing:-.03em}
+.pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.pal div{border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:12px}
+.pal i{display:block;height:56px}
+.pal p{margin:0;padding:8px 10px}
+
+footer{border-top:1px solid var(--line);padding-block:24px 30px;background:var(--bg2)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--muted)}
+footer .sig{font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.04em;color:var(--ink)}
+
+dialog{border:1px solid var(--line);border-radius:24px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100vw - 32px));max-height:88vh;box-shadow:0 30px 80px rgba(0,0,0,.18)}
+dialog::backdrop{background:rgba(30,26,32,.35);backdrop-filter:blur(3px)}
+.dlg{padding:22px;display:flex;flex-direction:column;gap:14px}
+.dlg .kw{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qrbox{display:grid;grid-template-columns:200px minmax(0,1fr);gap:18px;align-items:center}
+.qrbox .qr{background:#fff;border-radius:16px;padding:10px;border:1px solid var(--line)}
+.qrbox .qr svg,.qrbox .qr img{width:100%;height:auto;display:block}
+.copybox{border:1px dashed var(--line);border-radius:14px;padding:12px 14px;font-size:13.5px;white-space:pre-wrap;user-select:all;background:var(--bg2)}
+
+/* v0.2 carry-over */
+.catsec{display:flex;flex-direction:column;gap:12px;scroll-margin-top:140px}
+.catsec h3{font-size:20px}
+.recLay{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;align-items:start}
+.wi{display:flex;justify-content:space-between;gap:6px;align-items:center;font-size:12.5px;min-width:0}
+.lnk{border:0;background:none;padding:0;text-align:left;color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.lnk:hover{color:var(--acc)}
+dialog.wide{width:min(1020px,calc(100vw - 32px))}
+.det{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px;align-items:start}
+.detL{display:flex;flex-direction:column;gap:12px;position:sticky;top:0}
+.pair{display:grid;grid-template-columns:.8fr 1.2fr;gap:8px}
+.gbox{background:var(--chip);border-radius:18px;display:grid;place-items:center;padding:10px}
+.gbox svg{width:85%}
+.angles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.angles .fig{aspect-ratio:3/4.2;border-radius:12px}
+.pbig{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.spec{display:grid;grid-template-columns:76px minmax(0,1fr);gap:7px 12px;margin:0;font-size:13.5px}
+.spec dt{color:var(--muted);font-weight:500}
+.spec dd{margin:0}
+.tw{overflow-x:auto}
+.mt{border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;width:100%;min-width:360px}
+.mt th,.mt td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center}
+.mt th{font-weight:500;color:var(--ink2)}
+.mt td:first-child{text-align:left;color:var(--muted)}
+.mt .on{background:var(--soft);color:var(--acc);font-weight:700}
+.mt .me{color:var(--muted);border-left:1px dashed var(--line)}
+.chip small{font-size:10.5px;opacity:.7}
+.quick{display:flex;flex-direction:column;gap:8px}
+.qrow{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:center}
+.qitems{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.qi{flex:none;border:1px solid var(--line);background:var(--chip);border-radius:14px;width:62px;padding:4px 2px 3px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.qi svg{width:40px;height:40px}
+.qi span{font-size:10.5px;color:var(--muted)}
+.qi[aria-pressed="true"]{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset;background:var(--soft)}
+
+@media (max-width:880px){
+  .recLay,.det,.hero,.fit,.prof,.bgrid{grid-template-columns:1fr}
+  .recLay .side,.prof .side{order:-1}
+  .fig.live{max-height:430px}
+  .detL,.fitStage,.side{position:static}
+  .pain{grid-template-columns:1fr}
+  .hero{padding:18px}
+  .qrbox{grid-template-columns:1fr}
+  .qrbox .qr{max-width:220px}
+}
+@media (max-width:520px){
+  .look{grid-template-columns:110px minmax(0,1fr)}
+  .ubtn span{display:none}
+  .gsw button{padding:6px 11px}
+  .wm b{font-size:24px}
+  .stage{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:no-preference){
+  .pop{animation:pop .5s cubic-bezier(.2,1,.3,1)}
+  @keyframes pop{from{transform:translateY(6px);opacity:.3}to{transform:none;opacity:1}}
+}
+</style>
+
+<header>
+  <div class="wrap">
+    <div class="util">
+      <button class="ubtn" data-act="qr" aria-label="앱 다운로드 QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M17 20h4M20 17v4"/></svg><span>앱 다운로드 QR</span></button>
+      <button class="ubtn" data-act="refer" aria-label="친구 추천"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M18 7v6M15 10h6"/></svg><span>친구 추천</span></button>
+      <div class="seg" role="group" aria-label="화면 모드" id="themeSeg">
+        <button data-theme-set="light">주간</button><button data-theme-set="dark">야간</button><button data-theme-set="system">시스템</button>
+      </div>
+    </div>
+    <div class="bar">
+      <button class="brand" data-act="logo" aria-label="OTJAL 처음 화면으로">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#logoMark"/></svg>
+        <span class="wm"><b>OTJAL</b><span class="ver" id="verBadge"></span></span>
+      </button>
+      <span class="spacer"></span>
+      <div class="gsw" role="group" aria-label="성별">
+        <button id="gF" data-g="F">여성</button>
+        <button id="gM" data-g="M">남성</button>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="메뉴"></nav>
+  </div>
+</header>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="lgF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F49AB2"/><stop offset="1" stop-color="#DC4E76"/></linearGradient>
+    <linearGradient id="lgM" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8EA6F5"/><stop offset="1" stop-color="#3F60D2"/></linearGradient>
+    <symbol id="logoMark" viewBox="0 0 100 100">
+      <rect x="2" y="2" width="96" height="96" rx="28" fill="var(--acc)"/>
+      <rect x="2" y="2" width="96" height="96" rx="28" fill="url(#lgF)" style="opacity:var(--lgF,1)"/>
+      <rect x="2" y="2" width="96" height="96" rx="28" fill="url(#lgM)" style="opacity:var(--lgM,0)"/>
+      <path d="M37 31 L47 41 L65 20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M47 41 L47 46 L18 68 Q14 72 20 74 L80 74 Q86 72 82 68 L53 46" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<main class="wrap" id="main"></main>
+
+<footer>
+  <div class="wrap">
+    <span id="footVer">OTJAL · AI Personal Fashion Stylist &amp; Shopping Assistant</span>
+    <span class="sig">Designed &amp; Developed by Rat Rae Choi</span>
+  </div>
+</footer>
+
+<dialog id="shopDlg"><div class="dlg" id="shopBody"></div></dialog>
+
+<script>
+/* ===== OTJAL v0.3.0 — Designed & Developed by Rat Rae Choi ===== */
+const CREATOR = "Rat Rae Choi";
+const APP_NAME = "OTJAL", APP_VERSION = "0.3.0";
+const REPO_URL = "https://github.com/sadness500-boop/OTJAL";
+const APK_URL = "https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk";
+const $ = (s, r = document) => r.querySelector(s);
+const won = n => n.toLocaleString("ko-KR") + "원";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- 색상 / 퍼스널컬러 ---------- */
+const COLORS = {
+  ivory:{n:"아이보리",h:"#F1EBDD",t:"warm",pc:["봄웜","가을웜"],neu:1}, white:{n:"화이트",h:"#FAFAF8",t:"neu",pc:["여름쿨","겨울쿨"],neu:1},
+  black:{n:"블랙",h:"#1E1E22",t:"neu",pc:["겨울쿨"],neu:1}, gray:{n:"그레이",h:"#9A9AA0",t:"cool",pc:["여름쿨","겨울쿨"],neu:1},
+  melange:{n:"멜란지그레이",h:"#B9B6B3",t:"neu",pc:["여름쿨"],neu:1}, charcoal:{n:"차콜",h:"#3C3C42",t:"neu",pc:["겨울쿨"],neu:1},
+  navy:{n:"네이비",h:"#1F2C4F",t:"cool",pc:["겨울쿨","여름쿨"],neu:1}, beige:{n:"베이지",h:"#D9C4A5",t:"warm",pc:["봄웜","가을웜"],neu:1},
+  denim:{n:"데님블루",h:"#4C6A92",t:"cool",pc:["여름쿨","겨울쿨"],neu:1}, lightdenim:{n:"연청",h:"#93AECD",t:"cool",pc:["여름쿨"],neu:1},
+  camel:{n:"카멜",h:"#B5834D",t:"warm",pc:["가을웜","봄웜"]}, brown:{n:"브라운",h:"#6B4630",t:"warm",pc:["가을웜"]},
+  khaki:{n:"카키",h:"#6F6B45",t:"warm",pc:["가을웜"]}, olive:{n:"올리브",h:"#7A7F3E",t:"warm",pc:["가을웜"]},
+  butter:{n:"버터옐로",h:"#F3DE8A",t:"warm",pc:["봄웜"]}, coral:{n:"코랄",h:"#F08A74",t:"warm",pc:["봄웜"]},
+  pink:{n:"소프트핑크",h:"#F2C4CE",t:"cool",pc:["여름쿨","봄웜"]}, lavender:{n:"라벤더",h:"#C6B8E2",t:"cool",pc:["여름쿨"]},
+  sky:{n:"스카이블루",h:"#A9CBEA",t:"cool",pc:["여름쿨"]}, mint:{n:"민트",h:"#BFE3D2",t:"cool",pc:["여름쿨","봄웜"]},
+  sage:{n:"세이지그린",h:"#A7B59A",t:"neu",pc:["여름쿨","가을웜"]}, burgundy:{n:"버건디",h:"#6E1F33",t:"cool",pc:["겨울쿨","가을웜"]},
+  red:{n:"레드",h:"#C8323C",t:"cool",pc:["겨울쿨"]}
+};
+const PCS = ["봄웜","여름쿨","가을웜","겨울쿨","잘 모름"];
+
+/* ---------- 쇼핑몰 (각 사이트 검색 결과로 연결) ---------- */
+/* 검색 주소는 2026-10-21 각 사이트에서 실제 검색 결과가 열리는지 확인함 (g: 해당 성별 전용몰) */
+const SITE_GROUPS = ["포털·가격비교","오픈마켓","백화점·종합몰","패션 전문몰","트렌드 쇼핑앱"];
+const SITES = [
+  {id:"daum",n:"다음 검색",grp:"포털·가격비교",c:"#3B6CF6",u:"https://search.daum.net/search?w=tot&q="},
+  {id:"shoppinghow",n:"다음 쇼핑하우",grp:"포털·가격비교",c:"#F2B705",u:"https://shoppinghow.kakao.com/search/"},
+  {id:"naverplus",n:"네이버 플러스스토어",grp:"포털·가격비교",c:"#03C75A",u:"https://search.shopping.naver.com/ns/search?query="},
+  {id:"naver",n:"네이버 가격비교",grp:"포털·가격비교",c:"#03C75A",u:"https://search.shopping.naver.com/search/all?query="},
+  {id:"coupang",n:"쿠팡",grp:"오픈마켓",c:"#E0312B",u:"https://www.coupang.com/np/search?q="},
+  {id:"gmarket",n:"G마켓",grp:"오픈마켓",c:"#2BB24C",u:"https://www.gmarket.co.kr/n/search?keyword="},
+  {id:"auction",n:"옥션",grp:"오픈마켓",c:"#E8312F",u:"https://www.auction.co.kr/n/search?keyword="},
+  {id:"11st",n:"11번가",grp:"오픈마켓",c:"#FF0038",u:"https://search.11st.co.kr/pc/total-search?kwd="},
+  {id:"ssg",n:"SSG닷컴",grp:"백화점·종합몰",c:"#FF5A2E",u:"https://www.ssg.com/search.ssg?target=all&query="},
+  {id:"lotteon",n:"롯데ON",grp:"백화점·종합몰",c:"#E4002B",u:"https://www.lotteon.com/csearch/search/search?render=search&platform=pc&q="},
+  {id:"gsshop",n:"GS SHOP",grp:"백화점·종합몰",c:"#6CC24A",u:"https://www.gsshop.com/shop/search/main.gs?tq="},
+  {id:"cjonstyle",n:"CJ온스타일",grp:"백화점·종합몰",c:"#7B2BF9",u:"https://display.cjonstyle.com/p/search/searchAllList?k="},
+  {id:"musinsa",n:"무신사",grp:"패션 전문몰",c:"#111111",u:"https://www.musinsa.com/search/goods?keyword="},
+  {id:"29cm",n:"29CM",grp:"패션 전문몰",c:"#3A3A3A",u:"https://www.29cm.co.kr/store/search?keyword="},
+  {id:"wconcept",n:"W컨셉",grp:"패션 전문몰",c:"#5A5A5A",u:"https://display.wconcept.co.kr/search?keyword="},
+  {id:"lfmall",n:"LF몰",grp:"패션 전문몰",c:"#1D3C78",u:"https://www.lfmall.co.kr/app/search/result/"},
+  {id:"ssfshop",n:"SSF SHOP",grp:"패션 전문몰",c:"#222222",u:"https://www.ssfshop.com/search/result?keyword="},
+  {id:"fashionplus",n:"패션플러스",grp:"패션 전문몰",c:"#E5007E",u:"https://www.fashionplus.co.kr/search/goods/result?searchWord="},
+  {id:"halfclub",n:"하프클럽",grp:"패션 전문몰",c:"#F05A28",u:"https://www.halfclub.com/search/"},
+  {id:"uniqlo",n:"유니클로",grp:"패션 전문몰",c:"#E60012",u:"https://www.uniqlo.com/kr/ko/search?q="},
+  {id:"ably",n:"에이블리",grp:"트렌드 쇼핑앱",c:"#FF5D5D",u:"https://mobile.a-bly.com/search/search-result?query=",g:"F"},
+  {id:"brandi",n:"브랜디",grp:"트렌드 쇼핑앱",c:"#FF3D63",u:"https://www.brandi.co.kr/search?q=",g:"F"},
+  {id:"zigzag",n:"지그재그",grp:"트렌드 쇼핑앱",c:"#FF4596",u:"https://zigzag.kr/search?keyword=",g:"F",note:"앱에서 결과가 더 잘 보여요"},
+  {id:"hiver",n:"하이버",grp:"트렌드 쇼핑앱",c:"#1F1F1F",u:"https://www.hiver.co.kr/search?q=",g:"M"}
+];
+
+/* ---------- 스타일 / 상황 ---------- */
+const STYLES = { F:["러블리","꾸안꾸","미니멀","페미닌","오피스","캐주얼","스트릿","Y2K","스포티"],
+                 M:["미니멀","댄디","캐주얼","시티보이","스트릿","아메카지","고프코어","스포티"] };
+const OCCS = ["출근","데이트","일상","여행","운동","하객","면접"];
+const SEASONS = ["봄","여름","가을","겨울"];
+const FITS = {slim:"슬림",regular:"레귤러",over:"오버"};
+const SHAPES = { "스트레이트":"상체 볼륨감, 직선 실루엣", "웨이브":"하체 볼륨감, 곡선 실루엣", "내추럴":"골격감, 여유 있는 실루엣" };
+const CATNAME = {top:"상의",bottom:"하의",outer:"아우터",dress:"원피스",shoes:"신발",bag:"가방"};
+const catOf = s => s.startsWith("top")?"top":s.startsWith("outer")?"outer":(s.startsWith("pants")||s.startsWith("skirt"))?"bottom":s;
+
+/* ---------- 예시 상품 카탈로그 (MVP 데모용) ---------- */
+const RAW = {
+F:[
+["W1","크롭 라운드 가디건","top-l","pink","slim","러블리 페미닌 꾸안꾸","데이트 일상","봄 가을",39000,"크롭 가디건"],
+["W2","오버핏 코튼 셔츠","top-l","white","over","미니멀 꾸안꾸 캐주얼 오피스","출근 일상 여행","봄 여름 가을",42000,"오버핏 셔츠"],
+["W3","소프트 앙고라 니트","top-l","ivory","regular","러블리 꾸안꾸 페미닌","데이트 일상","가을 겨울",49000,"앙고라 니트"],
+["W4","리본 타이 블라우스","top-l","ivory","regular","러블리 페미닌 오피스","출근 데이트 하객","봄 가을",45000,"리본 블라우스"],
+["W5","슬림 반팔 티셔츠","top-s","black","slim","미니멀 캐주얼 Y2K","일상 여행 운동","봄 여름",19000,"슬림 반팔티"],
+["W6","베이비 크롭 티","top-s","butter","slim","Y2K 캐주얼 러블리","일상 여행","여름",21000,"크롭 반팔티"],
+["W7","브이넥 울 니트","top-l","camel","regular","미니멀 오피스 꾸안꾸","출근 면접 일상","가을 겨울",59000,"브이넥 니트"],
+["W8","스트라이프 셔츠","top-l","sky","regular","오피스 캐주얼 미니멀","출근 여행","봄 여름",38000,"스트라이프 셔츠"],
+["W9","기모 후드 맨투맨","top-l","melange","over","캐주얼 스트릿 스포티","일상 여행 운동","가을 겨울",35000,"후드 맨투맨"],
+["W10","라벤더 하프넥 니트","top-l","lavender","regular","러블리 페미닌 꾸안꾸","데이트 일상 출근","가을 겨울",46000,"하프넥 니트"],
+["W11","와이드 슬랙스","pants-w","beige","regular","오피스 미니멀","출근 면접 일상","봄 가을 겨울",45000,"와이드 슬랙스"],
+["W12","부츠컷 데님","pants-s","lightdenim","slim","캐주얼 꾸안꾸 Y2K","일상 데이트 여행","봄 가을",49000,"부츠컷 청바지"],
+["W13","와이드 데님","pants-w","denim","regular","캐주얼 꾸안꾸 스트릿","일상 여행","봄 가을 겨울",52000,"와이드 데님"],
+["W14","플리츠 롱스커트","skirt-l","lavender","regular","페미닌 러블리","데이트 하객 출근","봄 여름 가을",46000,"플리츠 롱스커트"],
+["W15","트위드 미니스커트","skirt-m","pink","slim","러블리 Y2K 페미닌","데이트 하객","봄 가을",44000,"트위드 미니스커트"],
+["W16","H라인 스커트","skirt-m","black","slim","오피스 미니멀","출근 면접","봄 가을 겨울",39000,"H라인 스커트"],
+["W17","조거 트레이닝 팬츠","pants-s","gray","regular","스포티 캐주얼","운동 일상 여행","봄 가을 겨울",32000,"조거팬츠"],
+["W18","요가 레깅스","pants-s","black","slim","스포티","운동","봄 여름 가을 겨울",29000,"요가 레깅스"],
+["W19","플라워 미디 원피스","dress","pink","regular","러블리 페미닌","데이트 하객 여행","봄 여름",69000,"플라워 원피스"],
+["W20","니트 롱원피스","dress","brown","slim","미니멀 페미닌","데이트 출근","가을 겨울",65000,"니트 원피스"],
+["W21","린넨 셔츠 원피스","dress","sage","regular","꾸안꾸 미니멀","여행 일상","여름",55000,"린넨 원피스"],
+["W22","숏 트위드 자켓","outer-s","ivory","regular","러블리 페미닌 오피스","하객 데이트 출근","봄 가을",89000,"트위드 자켓"],
+["W23","오버핏 블레이저","outer-s","black","over","오피스 미니멀","출근 면접","봄 가을",79000,"오버핏 블레이저"],
+["W24","핸드메이드 롱코트","outer-l","camel","regular","미니멀 오피스 페미닌","출근 데이트 하객","가을 겨울",159000,"핸드메이드 롱코트"],
+["W25","크롭 숏패딩","outer-s","white","over","캐주얼 스트릿 Y2K","일상 여행","겨울",99000,"숏패딩"],
+["W26","바람막이 자켓","outer-s","mint","over","스포티 캐주얼","운동 여행","봄 가을",59000,"바람막이"],
+["W27","메리제인 플랫","shoes","black","regular","러블리 페미닌 Y2K","데이트 출근 하객","봄 가을",49000,"메리제인 플랫슈즈"],
+["W28","레트로 스니커즈","shoes","ivory","regular","캐주얼 꾸안꾸 스트릿 스포티","일상 여행 운동","봄 여름 가을",69000,"레트로 스니커즈"],
+["W29","앵클 부츠","shoes","brown","regular","미니멀 페미닌","출근 데이트","가을 겨울",79000,"앵클부츠"],
+["W30","슬링백 펌프스","shoes","beige","regular","오피스 페미닌","출근 하객 면접","봄 여름 가을",59000,"슬링백"],
+["W31","미니 숄더백","bag","pink","regular","러블리 Y2K 페미닌","데이트 일상 하객","봄 여름 가을 겨울",45000,"미니 숄더백"],
+["W32","가죽 토트백","bag","beige","regular","오피스 미니멀","출근 면접 여행","봄 여름 가을 겨울",69000,"가죽 토트백"]
+],
+M:[
+["M1","옥스포드 셔츠","top-l","sky","regular","댄디 미니멀 캐주얼","출근 면접 데이트","봄 가을",39000,"옥스포드 셔츠"],
+["M2","오버핏 반팔 티셔츠","top-s","white","over","캐주얼 시티보이 스트릿","일상 여행","봄 여름",25000,"오버핏 반팔티"],
+["M3","피그먼트 맨투맨","top-l","charcoal","over","캐주얼 스트릿 시티보이","일상 여행","봄 가을",39000,"피그먼트 맨투맨"],
+["M4","램스울 크루넥 니트","top-l","navy","regular","댄디 미니멀","출근 데이트 하객","가을 겨울",55000,"크루넥 니트"],
+["M5","케이블 니트","top-l","ivory","regular","댄디 아메카지 캐주얼","데이트 일상","가을 겨울",59000,"케이블 니트"],
+["M6","기능성 트레이닝 티","top-s","black","slim","스포티","운동","봄 여름 가을",22000,"기능성 반팔티"],
+["M7","럭비 셔츠","top-l","burgundy","regular","아메카지 캐주얼 시티보이","일상 여행 데이트","봄 가을",49000,"럭비티"],
+["M8","헤비 후드티","top-l","melange","over","스트릿 캐주얼 스포티","일상 운동 여행","가을 겨울",45000,"후드티"],
+["M9","베이직 화이트 셔츠","top-l","white","slim","댄디 미니멀","출근 면접 하객","봄 여름 가을 겨울",35000,"화이트 셔츠"],
+["M10","세미와이드 슬랙스","pants-w","charcoal","regular","댄디 미니멀","출근 면접 데이트 하객","봄 가을 겨울",45000,"세미와이드 슬랙스"],
+["M11","스트레이트 데님","pants-s","denim","regular","캐주얼 아메카지 댄디","일상 데이트 여행","봄 가을 겨울",59000,"스트레이트 데님"],
+["M12","와이드 카고팬츠","pants-w","khaki","over","스트릿 고프코어 시티보이","일상 여행","봄 가을",55000,"와이드 카고팬츠"],
+["M13","치노 팬츠","pants-s","beige","regular","아메카지 댄디 캐주얼","출근 데이트 일상","봄 가을",42000,"치노팬츠"],
+["M14","나일론 쇼츠","pants-sh","black","regular","스포티 고프코어 시티보이","운동 여행 일상","여름",29000,"나일론 반바지"],
+["M15","트레이닝 조거","pants-s","gray","regular","스포티 캐주얼","운동 일상","봄 가을 겨울",35000,"조거팬츠"],
+["M16","싱글 블레이저","outer-s","navy","regular","댄디 미니멀","출근 면접 하객","봄 가을",99000,"싱글 블레이저"],
+["M17","발마칸 코트","outer-l","charcoal","regular","댄디 미니멀","출근 데이트 하객","가을 겨울",169000,"발마칸 코트"],
+["M18","데님 트러커 자켓","outer-s","denim","regular","아메카지 캐주얼","일상 여행 데이트","봄 가을",69000,"데님 자켓"],
+["M19","마운틴 파카","outer-s","olive","over","고프코어 시티보이 스포티","여행 운동 일상","봄 가을",89000,"마운틴 파카"],
+["M20","숏 다운 패딩","outer-s","black","over","스트릿 캐주얼 고프코어","일상 여행","겨울",129000,"숏패딩"],
+["M21","플리스 자켓","outer-s","ivory","over","고프코어 시티보이 캐주얼","일상 여행","가을 겨울",59000,"플리스 자켓"],
+["M22","더비 슈즈","shoes","black","regular","댄디 미니멀","출근 면접 하객","봄 여름 가을 겨울",89000,"더비슈즈"],
+["M23","캔버스 스니커즈","shoes","white","regular","캐주얼 시티보이 미니멀","일상 여행 데이트","봄 여름 가을",59000,"캔버스 스니커즈"],
+["M24","러닝화","shoes","gray","regular","스포티 고프코어","운동 여행","봄 여름 가을 겨울",99000,"러닝화"],
+["M25","페니 로퍼","shoes","brown","regular","댄디 아메카지","출근 데이트 하객","봄 가을",79000,"페니로퍼"],
+["M26","나일론 크로스백","bag","black","regular","시티보이 고프코어 캐주얼","일상 여행","봄 여름 가을 겨울",39000,"크로스백"],
+["M27","가죽 브리프케이스","bag","brown","regular","댄디 미니멀","출근 면접","봄 여름 가을 겨울",89000,"브리프케이스"]
+]};
+const ITEMS = {}; const BYID = {};
+for (const g of ["F","M"]) ITEMS[g] = RAW[g].map(r => { const it = {id:r[0],name:r[1],shape:r[2],color:r[3],fit:r[4],styles:r[5].split(" "),occ:r[6].split(" "),seasons:r[7].split(" "),price:r[8],kw:r[9],g,cat:catOf(r[2])}; BYID[it.id]=it; return it; });
+
+/* ---------- 상세 정보 (예시): [소재, 디테일 포인트] ---------- */
+const DETAIL = {
+W1:["아크릴 60% · 나일론 30% · 울 10%","짧은 기장에 진주 단추, 하이웨이스트 하의와 비율이 좋아요"],
+W2:["면 100% (코튼 브로드)","넉넉한 드롭숄더, 단독으로도 레이어드로도 활용도 높아요"],
+W3:["앙고라 20% · 울 30% · 나일론 50%","보송한 터치감, 얼굴 주변을 화사하게 밝혀줘요"],
+W4:["폴리에스터 100% (쉬폰)","넥 리본을 묶거나 풀어서 두 가지 무드로 연출"],
+W5:["면 95% · 스판덱스 5%","몸에 붙는 슬림 핏, 기본 이너로 쓰기 좋아요"],
+W6:["면 100%","배꼽선 크롭 기장, 와이드 데님과 Y2K 무드"],
+W7:["울 50% · 나일론 30% · 캐시미어 5% · 기타 15%","깊지 않은 브이넥으로 출근룩에 단정하게"],
+W8:["면 70% · 폴리에스터 30%","산뜻한 세로 스트라이프로 상체가 길어 보여요"],
+W9:["면 80% · 폴리에스터 20% (기모)","도톰한 기모 안감, 후드 끈 디테일"],
+W10:["울 30% · 아크릴 50% · 나일론 20%","반 목폴라로 쌀쌀한 날 목선이 따뜻해요"],
+W11:["폴리에스터 70% · 레이온 25% · 스판덱스 5%","허리 핀턱으로 다리가 길고 곧아 보여요"],
+W12:["면 98% · 스판덱스 2% (데님)","슬림하게 붙다가 밑단이 퍼지는 부츠컷"],
+W13:["면 100% (데님)","통이 넓어 편하고 체형 커버가 좋아요"],
+W14:["폴리에스터 100%","걸을 때 흔들리는 주름, 하객룩에도 좋아요"],
+W15:["폴리에스터 60% · 아크릴 30% · 기타 10% (트위드)","금장 단추 포인트, 트위드 자켓과 셋업 가능"],
+W16:["폴리에스터 65% · 레이온 32% · 스판덱스 3%","뒤트임으로 활동성 확보, 무릎 위 기장"],
+W17:["폴리에스터 88% · 스판덱스 12%","밑단 밴딩 조거, 운동·여행 겸용"],
+W18:["나일론 75% · 스판덱스 25%","하이웨이스트 복부 밴드, 쫀쫀한 압박감"],
+W19:["폴리에스터 100% (쉬폰)","잔꽃 프린트, 허리 셔링으로 라인 강조"],
+W20:["레이온 60% · 나일론 40%","몸을 따라 흐르는 니트 롱 실루엣"],
+W21:["린넨 55% · 면 45%","통기성 좋은 린넨, 단추를 풀어 가운처럼도 연출"],
+W22:["폴리에스터 50% · 아크릴 40% · 울 10% (트위드)","짧은 기장 트위드, 스커트·데님 모두 어울려요"],
+W23:["폴리에스터 100% (안감 포함)","어깨가 넓게 떨어지는 오버핏, 소매 롤업 연출"],
+W24:["울 90% · 캐시미어 10%","안감 없이 손바느질로 마감한 가벼운 롱코트"],
+W25:["나일론 100% · 충전재 오리털 80/20","짧은 크롭 기장, 하이웨이스트 팬츠와 비율 좋아요"],
+W26:["나일론 100% (방풍·생활방수)","가볍게 접어 휴대, 후드 내장"],
+W27:["천연 소가죽","스트랩 메리제인, 굽 1.5cm"],
+W28:["합성피혁 · 스웨이드 콤비","굽 3cm 레트로 러닝 실루엣"],
+W29:["천연 소가죽 · 고무 아웃솔","굽 5cm, 지퍼 여밈 앵클 기장"],
+W30:["합성피혁","굽 6cm 슬링백, 출근·하객 겸용"],
+W31:["합성피혁","체인·가죽 스트랩 2종, 숄더·크로스 가능"],
+W32:["천연 소가죽","A4 수납, 노트북 13인치까지"],
+M1:["면 100% (옥스포드)","버튼다운 칼라, 니트 이너로도 좋아요"],
+M2:["면 100% (헤비 코튼 230g)","탄탄한 원단의 드롭숄더 오버핏"],
+M3:["면 100% (피그먼트 워싱)","워싱으로 빈티지한 색감, 오버핏"],
+M4:["램스울 100%","보풀이 적은 램스울, 셔츠 레이어드에 좋아요"],
+M5:["울 30% · 아크릴 70%","굵은 케이블 짜임, 캐주얼·댄디 겸용"],
+M6:["폴리에스터 92% · 스판덱스 8% (쿨링)","땀 배출이 빠른 기능성 원단"],
+M7:["면 100%","칼라와 몸판 배색, 아메카지 무드"],
+M8:["면 85% · 폴리에스터 15% (450g)","두꺼운 헤비 원단, 후드 볼륨"],
+M9:["면 60% · 폴리에스터 40%","구김이 덜한 원단, 정장·캐주얼 겸용"],
+M10:["폴리에스터 65% · 레이온 32% · 스판덱스 3%","원턱 세미와이드, 밑단 접힘 없이 깔끔"],
+M11:["면 100% (셀비지 데님)","일자로 떨어지는 스트레이트 핏"],
+M12:["면 100% (트윌)","양옆 플랩 포켓, 밑단 스트링으로 핏 조절"],
+M13:["나일론 100%","가벼운 나일론, 수영·러닝 겸용"],
+M14:["면 98% · 스판덱스 2% (트윌)","슬림 테이퍼드 치노"],
+M15:["폴리에스터 88% · 스판덱스 12%","밑단 밴딩 조거"],
+M16:["울 50% · 폴리에스터 50%","2버튼 싱글, 셔츠·니트와 매치"],
+M17:["울 80% · 나일론 20%","숨은 단추 발마칸, 무릎 기장"],
+M18:["면 100% (데님)","트러커 디테일, 후드티 레이어드 추천"],
+M19:["나일론 100% (방풍·발수)","후드·멀티 포켓, 가벼운 등산·여행용"],
+M20:["나일론 100% · 충전재 오리털 80/20","볼륨 있는 숏 다운"],
+M21:["폴리에스터 100% (플리스)","보아 플리스, 하이넥으로 보온"],
+M22:["천연 소가죽","굽 3cm, 정장·슬랙스 모두 어울려요"],
+M23:["면 캔버스 · 고무 아웃솔","로우탑 클래식"],
+M24:["메쉬 · 합성소재","쿠셔닝 미드솔, 데일리 러닝"],
+M25:["천연 소가죽","페니 스트랩 로퍼, 치노·슬랙스 매치"],
+M26:["나일론 100%","가벼운 크로스백, 수납 포켓 4개"],
+M27:["천연 소가죽","노트북 15인치 수납"]
+};
+const care = m => /울|캐시미어|앙고라|램스울/.test(m) ? "드라이클리닝 권장 · 눕혀서 건조" : /가죽/.test(m) ? "전문 클리닝 · 마른 천으로 관리" : /데님/.test(m) ? "뒤집어서 찬물 단독 세탁" : /린넨/.test(m) ? "30℃ 손세탁 · 그늘 건조" : /나일론|폴리/.test(m) ? "중성세제 단독 세탁 · 건조기 금지" : "30℃ 세탁망 세탁";
+const BASELEN = {"top-l":62,"top-s":60,"outer-s":66,"outer-l":112,"pants-w":102,"pants-s":100,"pants-sh":46,"skirt-l":82,"skirt-m":42,"dress":118};
+function lengthOf(it, i){ let L = BASELEN[it.shape]||0; if (it.name.includes("크롭")) L -= 14; if (it.fit==="over" && it.cat==="top") L += 6; if (it.cat==="outer" && it.name.includes("숏")) L -= 12; if (it.g==="M") L += 6; return L + (i-2)*1.5; }
+
+/* ---------- 사이즈표 (신체 둘레 cm 기준) ---------- */
+const SZ = {
+  F:{names:["XS","S","M","L","XL"],chest:[[74,79],[79,84],[84,89],[89,94],[94,99]],waist:[[58,62],[62,66],[66,70],[70,75],[75,80]],hip:[[82,86],[86,90],[90,94],[94,99],[99,104]],shoulder:[35,36.5,38,39.5,41]},
+  M:{names:["S","M","L","XL","2XL"],chest:[[86,92],[92,98],[98,104],[104,110],[110,116]],waist:[[70,75],[75,80],[80,86],[86,92],[92,98]],hip:[[88,93],[93,98],[98,103],[103,108],[108,113]],shoulder:[42,44,46,48,50]}
+};
+const mid = r => (r[0]+r[1])/2;
+const SZARM = {F:[24,25.5,27,28.5,30], M:[28,29.5,31,32.5,34]};
+
+/* ---------- 상태 ---------- */
+const nowSeason = (() => { const m = new Date().getMonth()+1; return m>=3&&m<=5?"봄":m<=8&&m>=6?"여름":m>=9&&m<=11?"가을":"겨울"; })();
+function defaults(){ return {
+  g:"F", tab:"home",
+  profile:{
+    F:{age:"20대 후반",height:163,weight:52,shoulder:37,chest:84,underbust:70,waist:66,hip:91,thigh:52,calf:34,arm:26,armLen:54,inseam:74,shoe:240,footWidth:"보통",
+       shape:"웨이브",shoulderType:"보통",skin:"밝은",hair:"긴머리",hairColor:"브라운",pc:"여름쿨",fit:"regular",fitTop:"regular",fitBottom:"regular",fitOuter:"regular",
+       colors:["pink","ivory","lavender","beige","lightdenim"],avoidColors:[],styles:["러블리","꾸안꾸","페미닌"],occ:["데이트","출근","일상"],season:nowSeason,
+       topLen:"기본",skirtLen:"미디",patterns:[],materials:[],avoidMaterials:[],avoidItems:[],
+       bmin:20000,bmax:90000,budget:{top:60000,bottom:60000,dress:80000,outer:160000,shoes:80000,bag:70000},
+       w:{style:30,closet:20,budget:15,fit:15,occ:10,color:10}},
+    M:{age:"30대 초반",height:175,weight:70,shoulder:45,chest:96,underbust:0,waist:80,hip:96,thigh:56,calf:37,arm:30,armLen:60,inseam:80,shoe:270,footWidth:"보통",
+       shape:"스트레이트",shoulderType:"보통",skin:"중간",hair:"숏",hairColor:"흑갈",pc:"겨울쿨",fit:"regular",fitTop:"regular",fitBottom:"regular",fitOuter:"regular",
+       colors:["navy","charcoal","white","beige","denim"],avoidColors:[],styles:["댄디","미니멀","캐주얼"],occ:["출근","데이트","일상"],season:nowSeason,
+       topLen:"기본",skirtLen:"미디",patterns:[],materials:[],avoidMaterials:[],avoidItems:[],
+       bmin:30000,bmax:120000,budget:{top:60000,bottom:70000,dress:80000,outer:180000,shoes:100000,bag:90000},
+       w:{style:30,closet:20,budget:15,fit:15,occ:10,color:10}}
+  },
+  closet:{F:[{cat:"bottom",color:"denim"},{cat:"top",color:"white"},{cat:"outer",color:"black"}],M:[{cat:"bottom",color:"denim"},{cat:"top",color:"white"},{cat:"shoes",color:"white"}]},
+  theme:"light", refCode:"", sites:SITES.map(s=>s.id), sitesVer:2, recOpen:{}, previewDress:true, wish:[], likes:{}, hides:[],
+  fit:{F:{size:{}},M:{size:{}}}, pick:{occ:"데이트",i:0}, recCat:"all", recSort:"score", top3:true, coordOcc:"출근"
+};}
+let S;
+try { S = Object.assign(defaults(), JSON.parse(localStorage.getItem("otjal-v1")||"null")||{}); } catch(e){ S = defaults(); }
+if (S.sitesVer !== 2) { S.sites = SITES.map(s=>s.id); S.sitesVer = 2; }
+if (S.recOpen == null) S.recOpen = {};
+{ const D = defaults(); for (const g of ["F","M"]) { S.profile[g] = Object.assign({}, D.profile[g], S.profile[g]||{}); S.profile[g].budget = Object.assign({}, D.profile[g].budget, S.profile[g].budget||{}); S.profile[g].w = Object.assign({}, D.profile[g].w, S.profile[g].w||{}); } if (!S.theme) S.theme="light"; }
+if (!S.refCode) S.refCode = "OTJAL-" + Math.random().toString(36).slice(2,7).toUpperCase();
+const save = () => { try { localStorage.setItem("otjal-v1", JSON.stringify(S)); } catch(e){} };
+const P = () => S.profile[S.g];
+
+/* ---------- 사이즈 계산 ---------- */
+function garment(it, i){
+  const t = SZ[it.g], c = it.cat, f = it.fit;
+  const chE = {slim:4,regular:10,over:22}[f] + (c==="outer"?8:0);
+  const hiE = {slim:2,regular:6,over:14}[f] + (it.shape==="pants-w"?4:0) + (it.shape==="skirt-l"?12:it.shape==="skirt-m"?2:0) + (c==="dress"?8:0);
+  return { chest:mid(t.chest[i])+chE, shoulder:t.shoulder[i]+(f==="over"?5:f==="regular"?1:0)+(c==="outer"?1.5:0),
+           waist:mid(t.waist[i])+(c==="dress"?4:1), hip:mid(t.hip[i])+hiE, chE,
+           thigh:mid(t.hip[i])*0.6+{slim:3,regular:8,over:16}[f]+(it.shape==="pants-w"?6:0), arm:SZARM[it.g][i]+{slim:2,regular:5,over:10}[f]+(c==="outer"?4:0) };
+}
+function lab(k, d, kind){
+  const T = {
+    ch:[[0,"타이트","bad"],[5,"슬림","ok"],[14,"정핏","ok"],[24,"여유","loose"],[1e9,"오버","loose"]],
+    sh:[[-1.5,"좁음","bad"],[1.5,"정핏","ok"],[4.5,"여유","loose"],[1e9,"드롭","loose"]],
+    wa:[[-1,"조임","bad"],[3.5,"정핏","ok"],[7,"여유","loose"],[1e9,"큼","bad"]],
+    hi:[[0,"타이트","bad"],[4,"슬림","ok"],[12,"정핏","ok"],[1e9,"여유","loose"]],
+    th:[[0,"타이트","bad"],[4,"슬림","ok"],[12,"정핏","ok"],[1e9,"여유","loose"]],
+    ar:[[0,"타이트","bad"],[3,"슬림","ok"],[9,"정핏","ok"],[1e9,"여유","loose"]]
+  }[kind];
+  const r = T.find(x => d < x[0]); return {k, t:r[1], lv:r[2], d};
+}
+function regions(it, i, p){
+  const G = garment(it, i), out = [];
+  if (["top","outer","dress"].includes(it.cat)) { out.push(lab("어깨",G.shoulder-p.shoulder,"sh")); out.push(lab("가슴",G.chest-p.chest,"ch")); }
+  if (["bottom","dress"].includes(it.cat)) { out.push(lab("허리",G.waist-p.waist,"wa")); out.push(lab("엉덩이",G.hip-p.hip,"hi")); }
+  if (it.cat==="bottom" && !it.shape.startsWith("skirt") && p.thigh) out.push(lab("허벅지",G.thigh-p.thigh,"th"));
+  if (["top","outer"].includes(it.cat) && it.shape!=="top-s" && p.arm) out.push(lab("팔뚝",G.arm-p.arm,"ar"));
+  return out;
+}
+function recSize(it, p){
+  if (it.cat==="shoes") return {name:p.shoe+"mm", idx:null, ok:true, regions:[]};
+  if (it.cat==="bag") return null;
+  const t = SZ[it.g], n = t.names.length;
+  let best = -1;
+  if (it.cat==="top"||it.cat==="outer"){
+    const need = Math.max({slim:2,regular:6,over:14}[fitPrefOf(it,p)] + (it.cat==="outer"?8:0), garment(it,0).chE*0.65);
+    let bd = 1e9;
+    for (let i=0;i<n;i++){ const G=garment(it,i), d=G.chest-p.chest, s=G.shoulder-p.shoulder;
+      if (d>=0 && s>=-1.5 && Math.abs(d-need)<bd){ bd=Math.abs(d-need); best=i; } }
+  } else if (it.cat==="bottom"){
+    for (let i=0;i<n;i++){ const G=garment(it,i); if (G.waist-p.waist>=-0.5 && G.hip-p.hip>=0 && (it.shape.startsWith("skirt") || !p.thigh || G.thigh-p.thigh>=0)){ best=i; break; } }
+  } else if (it.cat==="dress"){
+    for (let i=0;i<n;i++){ const G=garment(it,i); if (G.chest-p.chest>=1 && G.waist-p.waist>=-0.5 && G.hip-p.hip>=0){ best=i; break; } }
+  }
+  const ok = best>=0; if (!ok) best = n-1;
+  return {idx:best, name:t.names[best], ok, regions:regions(it,best,p)};
+}
+
+/* ---------- 추천 점수 (기획서 가중치: 취향30 옷장20 예산15 핏15 상황·계절10 색상10) ---------- */
+const W = {style:.30, closet:.20, budget:.15, fit:.15, occ:.10, color:.10};
+const Wof = p => { const w=p.w||{}, s=Object.keys(W).reduce((a,k)=>a+(+w[k]||0),0); return s>0 ? Object.fromEntries(Object.keys(W).map(k=>[k,(+w[k]||0)/s])) : W; };
+const fitPrefOf = (it,p) => (it.cat==="bottom"?p.fitBottom:it.cat==="outer"?p.fitOuter:p.fitTop) || p.fit || "regular";
+const patternOf = it => /스트라이프/.test(it.name)?"스트라이프":/플라워/.test(it.name)?"플라워":/트위드/.test(it.name)?"트위드":"무지";
+const MATS = ["면","린넨","울·캐시미어","니트","데님","가죽","기능성"];
+function materialsOf(it){ const d=(DETAIL[it.id]||[""])[0], n=it.name, o=[];
+  if (/면/.test(d)) o.push("면"); if (/린넨/.test(d)) o.push("린넨"); if (/울|캐시미어|앙고라|램스울/.test(d)) o.push("울·캐시미어");
+  if (/니트|가디건|케이블/.test(n)) o.push("니트"); if (/데님/.test(d)||/데님|청바지/.test(n)) o.push("데님"); if (/가죽|피혁/.test(d)) o.push("가죽");
+  if (/스판덱스|기능성|나일론|쿨링|방풍|메쉬/.test(d)) o.push("기능성"); return o; }
+const AVOID = { F:["크롭","미니스커트","레깅스","원피스","오버핏","슬림핏","롱코트","패딩","하이힐","패턴"], M:["반바지","오버핏","슬림핏","롱코트","패딩","패턴","가죽"] };
+function itemTags(it){ const t=[]; if (/크롭/.test(it.name)) t.push("크롭"); if (it.shape==="skirt-m") t.push("미니스커트"); if (/레깅스/.test(it.name)) t.push("레깅스");
+  if (it.shape==="pants-sh") t.push("반바지"); if (it.cat==="dress") t.push("원피스"); if (it.fit==="over") t.push("오버핏"); if (it.fit==="slim" && it.cat!=="shoes") t.push("슬림핏");
+  if (it.shape==="outer-l") t.push("롱코트"); if (/패딩|다운/.test(it.name)) t.push("패딩"); if (/펌프스|슬링백/.test(it.name)) t.push("하이힐");
+  if (patternOf(it)!=="무지") t.push("패턴"); if (materialsOf(it).includes("가죽")) t.push("가죽"); return t; }
+function excluded(it,p){ if ((p.avoidColors||[]).includes(it.color)) return "피하는 색"; const tg=itemTags(it);
+  const a=(p.avoidItems||[]).find(x=>tg.includes(x)); if (a) return "피하는 아이템: "+a;
+  const m=materialsOf(it).find(x=>(p.avoidMaterials||[]).includes(x)); if (m) return "피하는 소재: "+m; return ""; }
+const PARTNAME = {style:"취향·스타일",closet:"보유 옷 조화",budget:"예산",fit:"체형·핏",occ:"상황·계절",color:"색상"};
+function pairH(a,b){ const A=COLORS[a],B=COLORS[b]; if(!A||!B) return .6;
+  if (a===b && !A.neu) return .5; if (A.neu && B.neu) return .85; if (A.neu || B.neu) return .92; if (A.t===B.t) return .78; return .45; }
+const PAIRS = {top:["bottom","outer"],bottom:["top","outer","shoes"],outer:["top","bottom"],dress:["outer","shoes"],shoes:["bottom","dress"],bag:["top","outer","bottom","dress"]};
+function shapeBonus(it, shape){
+  if (it.cat==="shoes"||it.cat==="bag") return [0,""];
+  if (shape==="스트레이트" && (it.fit==="regular" && ["top-l","pants-s","outer-s","outer-l","skirt-m"].includes(it.shape))) return [.2,"스트레이트 체형에 깔끔한 정핏 라인"];
+  if (shape==="웨이브" && (it.fit==="slim" || ["skirt-m","skirt-l","top-s","dress"].includes(it.shape) || it.name.includes("크롭"))) return [.2,"웨이브 체형의 허리선을 살리는 실루엣"];
+  if (shape==="내추럴" && (it.fit==="over" || ["pants-w","outer-l","skirt-l"].includes(it.shape))) return [.2,"내추럴 체형에 어울리는 여유 핏"];
+  return [0,""];
+}
+function score(it, p, opt={}){
+  const parts={}, why={};
+  // 취향
+  const ms = it.styles.filter(s=>p.styles.includes(s));
+  let st = p.styles.length ? Math.min(1, ms.length/Math.min(2,p.styles.length)) : .6;
+  const lk = it.styles.reduce((a,s)=>a+(S.likes[S.g+s]||0),0); st = Math.min(1, st + Math.min(.2, lk*.05));
+  why.style = ms.length ? `${ms.slice(0,2).join("·")} 취향 저격` : "새로운 스타일 제안";
+  const pat = patternOf(it); if ((p.patterns||[]).length){ if (p.patterns.includes(pat)) { st+=.12; if (pat!=="무지") why.style += ` · ${pat} 패턴`; } else st-=.15; }
+  const mm = materialsOf(it).filter(x=>(p.materials||[]).includes(x)); if (mm.length){ st+=.1; why.style += ` · ${mm[0]} 소재`; }
+  if (it.cat==="top"||it.cat==="outer"){ const crop=/크롭|숏/.test(it.name), long=it.shape==="outer-l"||it.fit==="over";
+    if (p.topLen==="크롭") st += crop?.12:-.05; else if (p.topLen==="롱") st += long?.1:crop?-.12:0; else if (crop) st-=.04; }
+  if (it.shape.startsWith("skirt")||it.cat==="dress"){ const len = it.shape==="skirt-m"?"미니":it.shape==="skirt-l"||/롱/.test(it.name)?"롱":"미디"; st += len===p.skirtLen?.1:-.05; }
+  st = Math.max(0, Math.min(1, st));
+  parts.style = st;
+  // 옷장
+  const cl = (S.closet[it.g]||[]).filter(o=>PAIRS[it.cat].includes(o.cat));
+  if (cl.length){ let b=cl[0], bv=-1; for(const o of cl){ const v=pairH(it.color,o.color); if(v>bv){bv=v;b=o;} }
+    parts.closet = bv; why.closet = `내 옷장 ${COLORS[b.color].n} ${CATNAME[b.cat]}와 매치`; }
+  else { parts.closet = .65; why.closet = "옷장 등록 시 더 정확해져요"; }
+  // 예산
+  const pr = it.price;
+  const bmax = (p.budget && p.budget[it.cat]) || p.bmax;
+  parts.budget = pr>=p.bmin && pr<=bmax ? 1 : pr<p.bmin ? .85 : Math.max(0, 1-(pr-bmax)/bmax*1.5);
+  why.budget = pr<=bmax ? `${CATNAME[it.cat]} 예산 안 ${won(pr)}` : `${CATNAME[it.cat]} 예산보다 ${won(pr-bmax)} 높아요`;
+  // 핏
+  const fp = fitPrefOf(it,p); const order = ["slim","regular","over"]; const dist = Math.abs(order.indexOf(it.fit)-order.indexOf(fp));
+  let fi = (it.cat==="shoes"||it.cat==="bag") ? .8 : [1,.6,.25][dist];
+  const [sb, stxt] = shapeBonus(it, p.shape); fi = Math.min(1, fi + sb);
+  const size = recSize(it, p);
+  if (size && size.idx!==null && !size.ok) fi *= .4;
+  parts.fit = fi; why.fit = stxt || (dist===0 ? `선호하는 ${it.cat==="bottom"&&fp==="over"?"와이드":FITS[fp]}핏` : `${FITS[it.fit]}핏 아이템`);
+  // 상황·계절
+  const occList = opt.occ ? [opt.occ] : p.occ; const mo = it.occ.filter(o=>occList.includes(o));
+  parts.occ = (mo.length?.6:.1) + (it.seasons.includes(p.season)?.4:0);
+  why.occ = mo.length ? `${mo[0]}룩 · ${p.season} 시즌` : `${p.season} 시즌 아이템`;
+  // 색상
+  const C = COLORS[it.color];
+  if (p.colors.includes(it.color)) { parts.color = 1; why.color = `좋아하는 ${C.n}`; }
+  else if (C.pc.includes(p.pc)) { parts.color = .8; why.color = `${p.pc} 퍼스널컬러에 맞는 ${C.n}`; }
+  else if (C.neu) { parts.color = .6; why.color = `어디에나 맞는 ${C.n}`; }
+  else { parts.color = .3; why.color = C.n; }
+  const Wp = Wof(p);
+  const total = Math.round(100*Object.keys(W).reduce((a,k)=>a+parts[k]*Wp[k],0));
+  const reasons = Object.keys(W).filter(k=>parts[k]>=.6).sort((a,b)=>parts[b]*Wp[b]-parts[a]*Wp[a]).slice(0,3).map(k=>why[k]);
+  if (size && size.idx!==null && !size.ok) reasons.push("입력한 체형에 맞는 사이즈가 없을 수 있어요");
+  return {total, parts, why, reasons, size};
+}
+function ranked(g, opt={}){
+  const p = S.profile[g];
+  return ITEMS[g].filter(it=>!S.hides.includes(it.id) && !excluded(it,p)).map(it=>({it, sc:score(it,p,opt)})).sort((a,b)=>b.sc.total-a.sc.total);
+}
+
+/* ---------- 코디 조합 ---------- */
+function outfits(g, occ, n=5){
+  const p = S.profile[g];
+  const R = ranked(g,{occ}).filter(x=>x.it.occ.includes(occ) || x.sc.total>=70);
+  const by = c => R.filter(x=>x.it.cat===c && x.it.seasons.includes(p.season)).concat(R.filter(x=>x.it.cat===c && !x.it.seasons.includes(p.season)));
+  const tops=by("top"), bottoms=by("bottom"), dresses=by("dress"), outers=by("outer"), shoes=by("shoes"), bags=by("bag");
+  const combos=[];
+  for (const t of tops.slice(0,7)) for (const b of bottoms.slice(0,7)) combos.push({parts:[t,b], s:(t.sc.total+b.sc.total)/2 + pairH(t.it.color,b.it.color)*12});
+  if (g==="F") for (const d of dresses.slice(0,4)) combos.push({parts:[d], s:d.sc.total + 9});
+  combos.sort((a,b)=>b.s-a.s);
+  const used=new Set(), picked=[];
+  for (const c of combos){ if (picked.length>=n) break; if (c.parts.some(x=>used.has(x.it.id))) continue; picked.push(c); c.parts.forEach(x=>used.add(x.it.id)); }
+  const needOuter = ["가을","겨울"].includes(p.season) || ["출근","면접","하객"].includes(occ);
+  return picked.map(c=>{
+    const base = c.parts.map(x=>x.it); const look={};
+    base.forEach(it=>look[it.cat]=it);
+    const harm = it => base.reduce((a,b)=>a+pairH(it.color,b.color),0)/base.length;
+    if (needOuter && outers.length){ const o=[...outers].sort((a,b)=>(b.sc.total/100+harm(b.it))-(a.sc.total/100+harm(a.it)))[0]; if(o && (o.it.occ.includes(occ)||o.sc.total>=72)) look.outer=o.it; }
+    const sh = [...shoes].sort((a,b)=>(b.sc.total/100+harm(b.it)+(b.it.occ.includes(occ)?.5:0))-(a.sc.total/100+harm(a.it)+(a.it.occ.includes(occ)?.5:0)))[0]; if (sh) look.shoes=sh.it;
+    const bg = bags.find(x=>x.it.occ.includes(occ)); if (bg) look.bag=bg.it;
+    const items = Object.values(look);
+    const scoreAvg = Math.round(c.parts.reduce((a,x)=>a+x.sc.total,0)/c.parts.length);
+    return {look, items, total:items.reduce((a,b)=>a+b.price,0), score:scoreAvg};
+  });
+}
+
+/* ---------- SVG: 상품 썸네일 ---------- */
+function shade(hex, f){ const n=parseInt(hex.slice(1),16); let r=n>>16,g=(n>>8)&255,b=n&255;
+  const m = v => Math.round(f<0? v*(1+f) : v+(255-v)*f); return "#"+[m(r),m(g),m(b)].map(v=>v.toString(16).padStart(2,"0")).join(""); }
+function thumb(it){
+  const c = COLORS[it.color].h, d = shade(c,-.35);
+  const P0 = {
+    "top-l":"M30 22 L42 16 Q50 23 58 16 L70 22 L88 50 L78 56 L68 42 L68 86 L32 86 L32 42 L22 56 L12 50 Z",
+    "top-s":"M30 22 L42 16 Q50 23 58 16 L70 22 L82 37 L72 45 L68 39 L68 84 L32 84 L32 39 L28 45 L18 37 Z",
+    "outer-s":"M30 20 L42 14 L50 30 L58 14 L70 20 L88 52 L78 58 L69 44 L69 84 L31 84 L31 44 L22 58 L12 52 Z",
+    "outer-l":"M32 12 L43 7 L50 22 L57 7 L68 12 L86 46 L77 51 L69 38 L71 94 L29 94 L31 38 L23 51 L14 46 Z",
+    "pants-w":"M30 10 L70 10 L80 92 L56 92 L50 38 L44 92 L20 92 Z",
+    "pants-s":"M33 10 L67 10 L66 92 L54 92 L50 38 L46 92 L34 92 Z",
+    "pants-sh":"M30 22 L70 22 L76 68 L54 68 L50 44 L46 68 L24 68 Z",
+    "skirt-l":"M37 12 L63 12 L79 90 L21 90 Z",
+    "skirt-m":"M35 24 L65 24 L74 70 L26 70 Z",
+    "dress":"M40 8 L46 6 Q50 12 54 6 L60 8 L62 30 L58 40 L77 92 L23 92 L42 40 L38 30 Z",
+    "shoes":"M10 62 Q11 50 24 52 L38 58 Q50 61 52 70 L52 74 L10 74 Z M48 72 Q49 60 62 62 L76 68 Q88 71 90 80 L90 84 L48 84 Z",
+    "bag":"M24 42 L76 42 L80 86 L20 86 Z"
+  };
+  let extra = "";
+  if (it.shape.startsWith("outer")) extra = `<path d="M50 ${it.shape==="outer-l"?22:30} L50 ${it.shape==="outer-l"?94:84}" stroke="${d}" stroke-width="1.6"/>`;
+  if (it.shape==="bag") extra = `<path d="M36 42 Q36 22 50 22 Q64 22 64 42" fill="none" stroke="${d}" stroke-width="3"/>`;
+  if (it.shape==="skirt-l" && it.name.includes("플리츠")) extra = [30,40,50,60,70].map(x=>`<path d="M${50+(x-50)*0.45} 14 L${x} 88" stroke="${d}" stroke-width=".8" opacity=".6"/>`).join("");
+  if (it.name.includes("스트라이프")) extra = [30,40,50,60,70].map(y=>`<path d="M33 ${y} L67 ${y}" stroke="${shade(c,-.25)}" stroke-width="2.4"/>`).join("");
+  return `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${P0[it.shape]}" fill="${c}" stroke="${d}" stroke-width="1.4" stroke-linejoin="round"/>${extra}</svg>`;
+}
+
+/* ---------- SVG: 가상 피팅 아바타 ---------- */
+function avatar(g, p, look, sizes={}, opts={}){
+  const X=120, s=Math.max(.88,Math.min(1.08,p.height/172));
+  const Wd = v => v*0.72/2;
+  const hs=p.shoulder*1.8/2, hc=Wd(p.chest), hw=Wd(p.waist), hh=Wd(p.hip);
+  const sizeOf = it => (sizes[it.id]!=null ? sizes[it.id] : (recSize(it,p)||{}).idx);
+  let o = "";
+  const M = "var(--mq)", ML="var(--mqLine)";
+  if (g==="F") o += `<path d="M98 50 Q96 21 120 22 Q144 21 142 50 L147 114 Q120 124 93 114 Z" fill="var(--hair)"/>`;
+  for (const k of [-1,1]) o += `<path d="M${X+k*(hs-4)} 96 L${X+k*(hs+10)} 168 L${X+k*(hs+12)} 236" stroke="${M}" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${X+k*(hs+12)}" cy="240" r="7" fill="${M}"/>`;
+  for (const k of [-1,1]) o += `<path d="M${X+k*hh} 212 Q${X+k*(hh+1)} 268 ${X+k*hh*0.62} 322 L${X+k*15} 418 L${X+k*5} 418 L${X+k*4} 330 L${X+k*2} 238 L${X} 236 L${X+k*hw} 180 Z" fill="${M}"/>`;
+  o += `<path d="M${X-9} 74 L${X-9} 86 L${X-hs} 94 Q${X-hs-1} 106 ${X-hc} 120 L${X-hc} 130 Q${X-hw-1} 150 ${X-hw} 168 Q${X-hw} 192 ${X-hh} 214 L${X-hh} 224 Q${X} 246 ${X+hh} 224 L${X+hh} 214 Q${X+hw} 192 ${X+hw} 168 Q${X+hw+1} 150 ${X+hc} 130 L${X+hc} 120 Q${X+hs+1} 106 ${X+hs} 94 L${X+9} 86 L${X+9} 74 Z" fill="${M}" stroke="${ML}" stroke-width=".8"/>`;
+  o += `<ellipse cx="${X}" cy="50" rx="18" ry="22" fill="${M}" stroke="${ML}" stroke-width=".8"/>`;
+  o += g==="F" ? `<path d="M101 48 Q103 24 120 26 Q138 24 139 48 Q129 33 120 35 Q110 33 101 48 Z" fill="var(--hair)"/>`
+               : `<path d="M101 48 Q100 24 120 25 Q141 24 139 48 Q135 35 120 35 Q105 35 101 48 Z" fill="var(--hair)"/>`;
+  // 신발
+  if (look.shoes){ const c=COLORS[look.shoes.color].h, d=shade(c,-.35);
+    for (const k of [-1,1]){ if (look.shoes.name.includes("부츠")) o+=`<rect x="${X+k*10-8}" y="398" width="16" height="26" rx="3" fill="${c}" stroke="${d}"/>`;
+      o += `<ellipse cx="${X+k*11}" cy="426" rx="13" ry="7" fill="${c}" stroke="${d}" stroke-width="1"/>`; } }
+  else for (const k of [-1,1]) o += `<ellipse cx="${X+k*10}" cy="424" rx="10" ry="6" fill="${M}"/>`;
+  // 하의
+  const bt = look.dress ? null : look.bottom;
+  if (bt){ const G=garment(bt,sizeOf(bt)), c=COLORS[bt.color].h, d=shade(c,-.35);
+    const hwG=Math.max(hw+1,Wd(G.waist)), hhG=Math.max(hh+1.5,Wd(G.hip));
+    if (bt.shape.startsWith("skirt")){ const long=bt.shape==="skirt-l", hy=long?384:252, hW=hhG+(long?24:7);
+      o += `<path d="M${X-hwG} 164 L${X+hwG} 164 Q${X+hhG+1} 190 ${X+hhG+1} 214 L${X+hW} ${hy} L${X-hW} ${hy} L${X-hhG-1} 214 Q${X-hhG-1} 190 ${X-hwG} 164 Z" fill="${c}" stroke="${d}" stroke-width="1"/>`;
+      if (bt.name.includes("플리츠")) for (let i=-3;i<=3;i++) o+=`<path d="M${X+i*hwG/3.5} 170 L${X+i*hW/3.5} ${hy-2}" stroke="${d}" stroke-width=".7" opacity=".55"/>`;
+    } else {
+      const hy = bt.shape==="pants-sh"?272:428;
+      const [outer,inner] = bt.shape==="pants-w" ? [hhG*0.95,4] : bt.shape==="pants-sh" ? [hhG*1.0,4] : bt.name.includes("레깅스") ? [17,5] : [21,6];
+      for (const k of [-1,1]) o += `<path d="M${X} 164 L${X+k*hwG} 164 Q${X+k*(hhG+0.5)} 190 ${X+k*hhG} 214 Q${X+k*(hhG+1)} 268 ${X+k*outer} ${hy} L${X+k*inner} ${hy} L${X+k*2} 240 L${X} 240 Z" fill="${c}" stroke="${d}" stroke-width="1"/>`;
+    }
+    o += `<path d="M${X-hwG} 168 L${X+hwG} 168" stroke="${d}" stroke-width="1"/>`;
+    if (/데님|청바지/.test(bt.name)) o += `<path d="M${X+1} 170 L${X+1} 200 Q${X+8} 204 ${X+9} 182" fill="none" stroke="#E8C27A" stroke-width="1"/><path d="M${X-hwG+3} 172 Q${X-hwG+10} 186 ${X-12} 172 M${X+hwG-3} 172 Q${X+hwG-10} 186 ${X+12} 172" fill="none" stroke="#E8C27A" stroke-width="1"/>`;
+    if (/슬랙스|치노/.test(bt.name)) for (const k of [-1,1]) o += `<path d="M${X+k*hhG*0.5} 176 L${X+k*(bt.shape==="pants-w"?hhG*0.48:12)} 420" stroke="${d}" stroke-width=".8" opacity=".6"/>`;
+    if (/카고/.test(bt.name)) for (const k of [-1,1]) o += `<rect x="${X+k*(hhG*0.95)-(k>0?14:0)}" y="268" width="14" height="20" rx="2" fill="${shade(c,-.08)}" stroke="${d}"/>`;
+  }
+  // 상의/아우터/원피스 공통
+  const upper = (it, layer) => {
+    const G=garment(it,sizeOf(it)), c=COLORS[it.color].h, d=shade(c,-.35);
+    const isOuter = layer==="outer", isDress = it.cat==="dress";
+    const gw=Math.max(hc+1.5+(isOuter?3:0), Wd(G.chest)), gs=Math.max(hs+0.5+(isOuter?2:0), G.shoulder*1.8/2), drop=Math.max(0,gs-hs-3);
+    const hem = isDress ? 356 : isOuter ? (it.shape==="outer-l"?342:(it.name.includes("숏")||it.name.includes("크롭"))?216:248) : it.name.includes("크롭")?176 : it.fit==="over"?236:226;
+    const longSleeve = !(it.shape==="top-s" || (isDress && !it.name.includes("니트")));
+    const sw = (it.fit==="over"?21:it.fit==="slim"?14:17) + (isOuter?3:0);
+    let r = "";
+    for (const k of [-1,1]){ const sx=X+k*(gs-4), sy=96+drop*.4;
+      r += longSleeve ? `<path d="M${sx} ${sy} L${X+k*(hs+10+drop*.3)} 168 L${X+k*(hs+12)} ${isOuter?240:234}" stroke="${c}" stroke-width="${sw}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
+                      : `<path d="M${sx} ${sy} L${X+k*(gs+5)} ${isDress?128:142}" stroke="${c}" stroke-width="${sw+2}" fill="none" stroke-linecap="round"/>`; }
+    let pts, hemHalf;
+    if (isDress){ const hW=Math.max(hh,Wd(G.hip))+20, wW=Math.max(hw+1.5,Wd(G.waist)); hemHalf=hW;
+      pts = `L${X+gs-3} ${92+drop*.2} L${X+gw} 120 L${X+wW} 168 L${X+hW} ${hem} L${X-hW} ${hem} L${X-wW} 168 L${X-gw} 120 L${X-gs+3} ${92+drop*.2}`;
+    } else {
+      const hemW = hem>205 ? Math.max(gw*(it.shape==="outer-l"?1.02:.98), hh+(isOuter?6:3)) + (it.shape==="outer-l"?8:0) : Math.max(gw*.94, hw+3); hemHalf=hemW;
+      const wpt = Math.max(hw+(isOuter?5:2), gw*({slim:.84,regular:.94,over:1}[it.fit]));
+      pts = `L${X+gs} ${92+drop*.2} L${X+gw} 120 ${hem>180?`L${X+wpt} 170`:""} L${X+hemW} ${hem} L${X-hemW} ${hem} ${hem>180?`L${X-wpt} 170`:""} L${X-gw} 120 L${X-gs} ${92+drop*.2}`;
+    }
+    const openFront = isOuter && !/패딩/.test(it.name);
+    if (openFront){
+      // 앞이 열린 아우터: 좌우 두 판으로 그려 안의 상의가 보이게
+      const op = Math.max(7, gw*0.36), wptO = Math.max(hw+5, gw*({slim:.84,regular:.94,over:1}[it.fit]));
+      for (const k of [-1,1]) r += `<path d="M${X+k*4} 84 L${X+k*11} 79 L${X+k*gs} ${92+drop*.2} L${X+k*gw} 120 ${hem>180?`L${X+k*wptO} 170`:""} L${X+k*hemHalf} ${hem} L${X+k*op} ${hem} L${X+k*op} 128 Z" fill="${c}" stroke="${d}" stroke-width="1" stroke-linejoin="round"/><path d="M${X+k*11} 79 L${X+k*(op+6)} 122 L${X+k*op} 130" fill="${shade(c,-.08)}" stroke="${d}" stroke-width="1"/>`;
+    } else {
+      r += `<path d="M${X-10} 79 Q${X} ${isOuter?104:91} ${X+10} 79 ${pts} Z" fill="${c}" stroke="${d}" stroke-width="1" stroke-linejoin="round"/>`;
+      if (isOuter) r += `<path d="M${X} 92 L${X} ${hem}" fill="none" stroke="${d}" stroke-width="1.4"/>`;
+    }
+    if (it.name.includes("스트라이프")) for (let y=104;y<hem-4;y+=12) r+=`<path d="M${X-gw+2} ${y} L${X+gw-2} ${y}" stroke="${shade(c,-.22)}" stroke-width="2.2" opacity=".8"/>`;
+    // 소재·디테일 표현
+    const nm = it.name, lite = shade(c,.18);
+    if (/트위드/.test(nm)) for (let y=100;y<hem-4;y+=7) for (let x=-gw+4;x<gw-3;x+=7) if (!(isOuter && Math.abs(x) < Math.max(7,gw*0.36)+1 && y>118)) r+=`<circle cx="${X+x+((y/7)%2)*3}" cy="${y}" r="1.1" fill="${(x+y)%3?d:lite}" opacity=".7"/>`;
+    if (/패딩/.test(nm)) for (let y=110;y<hem-4;y+=14) r+=`<path d="M${X-hemHalf+3} ${y} Q${X} ${y+3} ${X+hemHalf-3} ${y}" stroke="${d}" stroke-width="1" fill="none" opacity=".7"/>`;
+    if (/니트|가디건|맨투맨|후드/.test(nm) && !isDress) r+=`<path d="M${X-hemHalf+2} ${hem-4} L${X+hemHalf-2} ${hem-4}" stroke="${d}" stroke-width="7" stroke-dasharray="1 2.4" opacity=".35"/>`;
+    if (/셔츠|블라우스/.test(nm) && !isOuter){
+      r += `<path d="M${X-12} 78 L${X-3} 93 L${X} 85 L${X+3} 93 L${X+12} 78" fill="${lite}" stroke="${d}" stroke-width="1" stroke-linejoin="round"/>`;
+      for (let y=100;y<Math.min(hem,isDress?160:hem)-8;y+=15) r+=`<circle cx="${X}" cy="${y}" r="1.7" fill="${d}"/>`; }
+    if (/리본/.test(nm)) r += `<path d="M${X} 92 L${X-10} 86 L${X-9} 98 Z M${X} 92 L${X+10} 86 L${X+9} 98 Z M${X} 92 L${X-5} 112 M${X} 92 L${X+5} 112" fill="${lite}" stroke="${d}" stroke-width="1"/>`;
+    if (/가디건/.test(nm)) { r += `<path d="M${X} 84 L${X} ${hem}" stroke="${d}" stroke-width="1.2"/>`; for (let y=96;y<hem-6;y+=13) r+=`<circle cx="${X+3}" cy="${y}" r="2" fill="#F4EFE6" stroke="${d}" stroke-width=".6"/>`; }
+    if (/후드/.test(nm)) r += `<path d="M${X-17} 80 Q${X} 68 ${X+17} 80 Q${X+15} 98 ${X} 100 Q${X-15} 98 ${X-17} 80 Z" fill="${shade(c,-.1)}" stroke="${d}" stroke-width="1"/><path d="M${X-5} 99 L${X-6} 122 M${X+5} 99 L${X+6} 122" stroke="${d}" stroke-width="1.3"/>`;
+    if (/블레이저|코트|자켓/.test(nm) && isOuter && !/트위드|데님|바람|파카|플리스/.test(nm)) { const bx = X - Math.max(7, gw*0.36) - 4; r += `<circle cx="${bx}" cy="${it.shape==="outer-l"?150:140}" r="2.2" fill="${d}"/><circle cx="${bx}" cy="${it.shape==="outer-l"?178:162}" r="2.2" fill="${d}"/>`; }
+    if (/트위드/.test(nm) && isOuter) { const op=Math.max(7, gw*0.36); r += `<path d="M${X-11} 80 L${X-op-1} 128 L${X-op-1} ${hem} M${X+11} 80 L${X+op+1} 128 L${X+op+1} ${hem}" stroke="${lite}" stroke-width="2.4" fill="none"/>`; }
+    if (/플라워/.test(nm)) for (let y=126;y<hem-6;y+=16) for (let x=-hemHalf+8;x<hemHalf-6;x+=14) if (Math.abs(x) < (y<170? gw : hemHalf*(y-120)/(hem-120)+hw)-4) r+=`<circle cx="${X+x+((y/16)%2)*6}" cy="${y}" r="2.2" fill="#fff" opacity=".85"/><circle cx="${X+x+((y/16)%2)*6}" cy="${y}" r=".9" fill="${shade(c,-.3)}"/>`;
+    return r;
+  };
+  if (look.dress) o += upper(look.dress,"dress");
+  else if (look.top) o += upper(look.top,"top");
+  if (look.outer) o += upper(look.outer,"outer");
+  if (look.bag){ const c=COLORS[look.bag.color].h, d=shade(c,-.35), bx=X+hs+4;
+    o += `<path d="M${X+hs-6} 92 L${bx+10} 228" stroke="${d}" stroke-width="2"/><rect x="${bx}" y="226" width="${look.bag.name.includes("미니")||look.bag.name.includes("크로스")?20:28}" height="${look.bag.name.includes("미니")||look.bag.name.includes("크로스")?16:24}" rx="4" fill="${c}" stroke="${d}"/>`; }
+  // 키 눈금자
+  let ruler = "";
+  if (opts.ruler){ const pxcm = 404/172, base=432;
+    ruler += `<path d="M6 ${base} L6 ${base-190*pxcm}" stroke="var(--line)" stroke-width="1"/>`;
+    for (let cm=0; cm<=190; cm+=10){ const y = base - (cm*pxcm); if (y<-8) continue;
+      ruler += `<path d="M6 ${y} L${cm%50===0?18:12} ${y}" stroke="var(--muted)" stroke-width="1"/>` + (cm%50===0 ? `<text x="21" y="${y+3.5}" font-size="9" fill="var(--muted)" font-family="DM Mono, monospace">${cm}</text>` : ""); }
+    const ty = base - p.height*pxcm;
+    ruler += `<path d="M44 ${ty} L232 ${ty}" stroke="var(--acc)" stroke-dasharray="3 3" stroke-width="1"/><text x="232" y="${ty-4}" text-anchor="end" font-size="11" fill="var(--acc)" font-family="DM Mono, monospace">${p.height}cm</text>`;
+  }
+  return `<svg class="av" viewBox="0 -14 240 452" role="img" aria-label="가상 피팅 아바타"><g transform="translate(${X} 432) scale(${s}) translate(${-X} -432)">${o}</g>${ruler}</svg>`;
+}
+
+/* ---------- 3D 실사 피규어 (Three.js r128) — OTJAL · Rat Rae Choi ---------- */
+const Fig3D = (() => {
+  const T = window.THREE;
+  const ok = (() => { try { if (!T || !T.WebGLRenderer || !T.LatheGeometry) return false; const c=document.createElement("canvas"); return !!(c.getContext("webgl2")||c.getContext("webgl")); } catch(e){ return false; } })();
+  const SKIN = {"밝은":"#EFCDB8","중간":"#E1B392","웜":"#CF9A72","딥":"#9E6A47"};
+  const HAIRC = {"블랙":"#1A1615","흑갈":"#2F2420","브라운":"#5B3C2B","밀크브라운":"#8A6A52","애쉬":"#6E6863"};
+  const texCache = {};
+  function rnd(seed){ let s=seed%2147483647||7; return ()=> (s=(s*16807)%2147483647)/2147483647; }
+  function fabricKind(it){ const n=it.name, D=(DETAIL[it.id]||[""])[0];
+    if (/트위드/.test(n)) return "tweed"; if (/스트라이프/.test(n)) return "stripe"; if (/플라워/.test(n)) return "flower";
+    if (/패딩|다운/.test(n)) return "quilt"; if (/데님|청바지|트러커/.test(n)) return "denim";
+    if (/니트|가디건|앙고라|케이블/.test(n)) return "knit";
+    if (it.cat==="shoes"||it.cat==="bag") return /캔버스|스니커즈|러닝|나일론/.test(n) ? "canvas" : "leather";
+    if (/린넨/.test(D)) return "linen"; if (/바람|파카|쇼츠|레깅스|트레이닝|조거|기능성|플리스/.test(n)) return "tech"; return "cotton"; }
+  function fabricTex(kind, hex){ const key=kind+hex; if (texCache[key]) return texCache[key];
+    const c=document.createElement("canvas"); c.width=c.height=256; const x=c.getContext("2d"), R=rnd(parseInt(hex.slice(1),16)+kind.length*131);
+    const dk=shade(hex,-.2), lt=shade(hex,.22); x.fillStyle=hex; x.fillRect(0,0,256,256);
+    const spray=(n,cols,a,w,h)=>{ for(let i=0;i<n;i++){ x.globalAlpha=a; x.fillStyle=cols[i%cols.length]; x.fillRect(R()*256,R()*256,w,h);} };
+    if (kind==="knit"){ for(let i=0;i<256;i+=8){ x.globalAlpha=.22; x.fillStyle=dk; x.fillRect(i,0,2.5,256); x.globalAlpha=.14; x.fillStyle=lt; x.fillRect(i+4,0,2,256);} spray(900,[lt,dk],.08,2,2); }
+    else if (kind==="tweed"){ spray(3400,[dk,lt,"#FFFFFF","#C9A27C",shade(hex,-.4)],.6,3,1.6); }
+    else if (kind==="denim"){ x.globalAlpha=.25; x.strokeStyle=lt; x.lineWidth=1.2; for(let i=-256;i<256;i+=4){ x.beginPath(); x.moveTo(i,0); x.lineTo(i+256,256); x.stroke(); } spray(1800,[dk,"#FFFFFF"],.12,1,3); }
+    else if (kind==="stripe"){ x.globalAlpha=.85; x.fillStyle=shade(hex,-.35); for(let i=0;i<256;i+=21) x.fillRect(i,0,6,256); }
+    else if (kind==="flower"){ for(let n=0;n<34;n++){ const cx=R()*256, cy=R()*256; x.globalAlpha=.95; x.fillStyle="#FFFFFF"; for(let k=0;k<5;k++){ const a=k/5*6.283; x.beginPath(); x.arc(cx+Math.cos(a)*5,cy+Math.sin(a)*5,3.6,0,7); x.fill(); } x.fillStyle="#F2C14E"; x.beginPath(); x.arc(cx,cy,2.6,0,7); x.fill(); x.globalAlpha=.55; x.fillStyle=shade(hex,-.32); x.beginPath(); x.ellipse(cx+10,cy+8,5,2,.6,0,7); x.fill(); } }
+    else if (kind==="quilt"){ for(let j=0;j<256;j+=32){ const g=x.createLinearGradient(0,j,0,j+32); g.addColorStop(0,dk); g.addColorStop(.2,hex); g.addColorStop(.55,lt); g.addColorStop(1,dk); x.globalAlpha=1; x.fillStyle=g; x.fillRect(0,j,256,32);} }
+    else if (kind==="leather"){ spray(4000,[dk,lt],.07,2,2); }
+    else if (kind==="linen"){ x.globalAlpha=.12; for(let i=0;i<256;i+=3){ x.fillStyle=R()>.5?dk:lt; x.fillRect(i,0,1,256); x.fillRect(0,i,256,1);} }
+    else if (kind==="canvas"||kind==="tech"){ x.globalAlpha=.08; for(let i=0;i<256;i+=2){ x.fillStyle=dk; x.fillRect(i,0,1,256);} }
+    else { spray(2400,[dk,lt],.05,2,1); }
+    const t=new T.CanvasTexture(c); t.wrapS=t.wrapT=T.RepeatWrapping;
+    t.repeat.set(kind==="quilt"?1:3, kind==="quilt"?1:kind==="stripe"?1:3); t.encoding=T.sRGBEncoding; t.anisotropy=4; texCache[key]=t; return t; }
+  function clothMat(it){ const hex=COLORS[it.color].h, k=fabricKind(it);
+    const m=new T.MeshPhysicalMaterial({ color:0xffffff, map:fabricTex(k,hex), roughness:({leather:.42,quilt:.36,tech:.48,denim:.9,knit:.96,tweed:.92,canvas:.85})[k]||.82, metalness:0, side:T.DoubleSide, envMapIntensity:.32 });
+    if (["knit","tweed"].includes(k)) m.sheen = new T.Color(shade(hex,-.05));
+    if (["leather","quilt","tech"].includes(k)) { m.clearcoat=.35; m.clearcoatRoughness=.45; }
+    return m; }
+
+  const V2=(r,y)=>new T.Vector2(Math.max(r,1e-4),y);
+  function smoothPts(pts,n){ const c=new T.SplineCurve(pts.map(([r,y])=>new T.Vector2(r,y))); return c.getPoints(n||64).map(v=>V2(v.x,v.y)); }
+  function latheMesh(pts, mat, o={}){ const geo=new T.LatheGeometry(o.raw?pts.map(([r,y])=>V2(r,y)):smoothPts(pts,o.n), o.seg||64, o.phiStart||0, o.phiLen||Math.PI*2);
+    const m=new T.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; return m; }
+  function ell(rx,ry,rz,mat){ const m=new T.Mesh(new T.SphereGeometry(1,40,28),mat); m.scale.set(rx,ry,rz); m.castShadow=true; m.receiveShadow=true; return m; }
+  function rAt(pts,y){ for(let i=0;i<pts.length-1;i++){ const [r0,y0]=pts[i],[r1,y1]=pts[i+1]; if ((y>=y0&&y<=y1)||(y<=y0&&y>=y1)) return r0+(r1-r0)*((y-y0)/((y1-y0)||1)); } return pts[pts.length-1][0]; }
+  const incY = pts => pts.filter((q,i)=> i===0 || q[1] > pts.slice(0,i).reduce((m,z)=>Math.max(m,z[1]),-9)+0.004);
+  function pleat(geo, yTop, yBot, N, amp){ const a=geo.attributes.position; for(let i=0;i<a.count;i++){ const x=a.getX(i), y=a.getY(i), z=a.getZ(i);
+      const t=Math.max(0,Math.min(1,(yTop-y)/((yTop-yBot)||1))); const f=1+amp*t*Math.sin(N*Math.atan2(x,z)); a.setX(i,x*f); a.setZ(i,z*f); } a.needsUpdate=true; geo.computeVertexNormals(); }
+
+  function build(g, p, look, sizes){
+    const root=new T.Group(), k=0.01, H=p.height*k, hs=H/1.65;
+    const Rc = c => c/(2*Math.PI)*k*1.17, DZ = g==="F"?0.70:0.68;
+    const sizeOf = it => (sizes && sizes[it.id]!=null) ? sizes[it.id] : ((recSize(it,p)||{}).idx ?? 2);
+    const yCr=Math.min(p.inseam*k, H*0.5), yHip=yCr+H*0.055, yWaist=yCr+H*(g==="F"?0.15:0.135);
+    const sht=({"직각":0.008,"보통":0,"처진":-0.012})[p.shoulderType]||0;
+    const yUnder=H*0.69, yChest=H*0.725, yArm=H*0.75, ySh=H*(0.818+sht), yNeck=H*0.842, yHead=H-0.108*hs;
+    const yKnee=yCr*0.56, yCalf=yKnee*0.66, yAnk=0.075;
+    const rHip=Rc(p.hip), rWaist=Rc(p.waist), rChest=Rc(p.chest), rRib=g==="F"?Rc(p.underbust||p.chest-12)*1.04:rChest;
+    const rSh=p.shoulder*k/2, rNeck=(g==="F"?0.047:0.056)*hs;
+    const rThigh=p.thigh/(2*Math.PI)*k, rCalf=p.calf/(2*Math.PI)*k, rKnee=Math.max(rCalf*1.02,rThigh*0.66), rAnkle=g==="F"?0.031:0.036;
+    const rUA=p.arm/(2*Math.PI)*k, armL=p.armLen*k;
+    const chestT = g==="F" ? Math.max(rRib*1.03, rChest*0.9) : rChest;
+    const skin=new T.MeshPhysicalMaterial({color:SKIN[p.skin]||SKIN["밝은"], roughness:.55, clearcoat:.08, clearcoatRoughness:.6, envMapIntensity:.3});
+    // 몸통
+    const torso=latheMesh([[0.001,yCr-0.012],[rHip*0.6,yCr],[rHip*0.96,yCr+H*0.03],[rHip,yHip],[(rHip+rWaist)/2,(yHip+yWaist)/2],[rWaist,yWaist],[(rWaist+rRib)/2,(yWaist+yUnder)/2],[rRib,yUnder],[chestT,yChest],[chestT*0.97,yArm],[rSh*0.9,ySh-H*0.022],[rSh*0.6,ySh+H*0.004],[rNeck*1.2,yNeck-0.004],[rNeck,yNeck+0.01],[0.001,yNeck+0.012]], skin);
+    torso.scale.z=DZ; root.add(torso);
+    let bustB=0;
+    if (g==="F"){ bustB=Math.min(0.062,Math.max(0.034,(p.chest-(p.underbust||p.chest-12))*k*0.45));
+      for (const s of [-1,1]){ const m=ell(bustB,bustB*0.9,bustB*0.8,skin); m.position.set(s*chestT*0.42, yChest-0.012, chestT*DZ-0.4*bustB); root.add(m);} }
+    // 목·머리·얼굴
+    const neck=latheMesh([[rNeck*1.05,yNeck-0.01],[rNeck,yNeck+0.02],[rNeck*0.92,yHead-0.06*hs],[0.001,yHead-0.03*hs]], skin,{n:12}); neck.scale.z=.95; root.add(neck);
+    const headP=[[0.001,-0.108],[0.03,-0.104],[0.05,-0.088],[0.062,-0.06],[0.07,-0.025],[0.074,0.012],[0.071,0.048],[0.06,0.078],[0.04,0.098],[0.001,0.108]].map(([r,y])=>[r*hs,y*hs]);
+    const head=latheMesh(headP, skin, {n:40,seg:48}); head.scale.z=1.2; head.position.set(0,yHead,0.004); root.add(head);
+    const hz=(x,y)=>{ const r=rAt(headP,y*hs)/hs; return 1.2*r*Math.sqrt(Math.max(0,1-(x/r)**2))*hs+0.004; };
+    for (const s of [-1,1]){ const e=ell(0.011*hs,0.022*hs,0.014*hs,skin); e.position.set(s*0.072*hs,yHead-0.008*hs,0); root.add(e); }
+    const eyeM=new T.MeshPhysicalMaterial({color:"#2a201d",roughness:.2,clearcoat:1}), hlM=new T.MeshBasicMaterial({color:"#ffffff"});
+    const browM=new T.MeshStandardMaterial({color:HAIRC[p.hairColor]||"#3a2a22",roughness:.8});
+    for (const s of [-1,1]){
+      const eye=ell(0.0105*hs,0.0075*hs,0.005*hs,eyeM); eye.position.set(s*0.027*hs,yHead+0.004*hs,hz(0.027,0.004)-0.002*hs); root.add(eye);
+      const hl=ell(0.0024*hs,0.0024*hs,0.0015*hs,hlM); hl.position.set(s*0.027*hs+0.003*hs,yHead+0.007*hs,hz(0.027,0.004)+0.0025*hs); root.add(hl);
+      const brow=ell(0.016*hs,0.0026*hs,0.003*hs,browM); brow.position.set(s*0.028*hs,yHead+0.026*hs,hz(0.028,0.026)); brow.rotation.z=s*-0.12; root.add(brow); }
+    const nose=ell(0.008*hs,0.017*hs,0.011*hs,skin); nose.position.set(0,yHead-0.02*hs,hz(0,-0.02)-0.004*hs); root.add(nose);
+    const lip=ell(0.016*hs,0.005*hs,0.006*hs,new T.MeshPhysicalMaterial({color:g==="F"?"#C9707B":"#B47E72",roughness:.35,clearcoat:.4})); lip.position.set(0,yHead-0.056*hs,hz(0,-0.056)-0.002*hs); root.add(lip);
+    if (g==="F") for (const s of [-1,1]){ const bl=ell(0.016*hs,0.009*hs,0.004*hs,new T.MeshBasicMaterial({color:"#F3A6A6",transparent:true,opacity:.3})); bl.position.set(s*0.045*hs,yHead-0.03*hs,hz(0.045,-0.03)-0.001); root.add(bl); }
+    // 헤어
+    const hairM=new T.MeshPhysicalMaterial({color:HAIRC[p.hairColor]||"#2F2420",roughness:.45,clearcoat:.25,clearcoatRoughness:.5,side:T.DoubleSide,envMapIntensity:.3});
+    { const capP=headP.filter(([r,y])=>y>=-0.045*hs).map(([r,y])=>[r*1.07+0.002,y*1.04+0.004*hs]); const geo=new T.LatheGeometry(smoothPts(capP,40),64); const a=geo.attributes.position;
+      for (let i=0;i<a.count;i++){ const x=a.getX(i), y=a.getY(i), z=a.getZ(i), c=Math.cos(Math.atan2(x,z));
+        const minY = c>0 ? (-0.012+0.067*c*c)*hs : (-0.012-0.03*(-c))*hs;
+        if (y<minY){ const r0=Math.hypot(x,z)||1e-4, r1=(rAt(headP,minY)*1.07+0.002); a.setY(i,minY); a.setX(i,x/r0*r1); a.setZ(i,z/r0*r1); } }
+      a.needsUpdate=true; geo.computeVertexNormals(); const cap=new T.Mesh(geo,hairM); cap.scale.z=1.2; cap.position.set(0,yHead,0.004); cap.castShadow=true; root.add(cap);
+      if (g==="F" && p.hair!=="숏"){ const bang=ell(0.05*hs,0.013*hs,0.011*hs,hairM); bang.position.set(0.014*hs,yHead+0.06*hs,hz(0.014,0.06)-0.004*hs); bang.rotation.z=-0.32; root.add(bang); } }
+    if (p.hair==="묶음"){ const bun=ell(0.045*hs,0.045*hs,0.045*hs,hairM); bun.position.set(0,yHead+0.06*hs,-0.085*hs); root.add(bun); }
+    else if (p.hair && p.hair!=="숏"){ const yEnd = p.hair==="단발"? yHead-0.12*hs : p.hair==="중단발"? ySh-0.03 : yChest-0.05;
+      const back=latheMesh([[0.06*hs,yEnd-0.006],[p.hair==="긴머리"?0.112*hs:0.096*hs,yEnd],[0.09*hs,Math.max(yEnd+0.05,yHead-0.13*hs)],[0.082*hs,yHead-0.09*hs],[0.085*hs,yHead-0.03*hs],[0.077*hs,yHead+0.03*hs]], hairM, {phiStart:Math.PI*0.6, phiLen:Math.PI*0.8, seg:40});
+      back.scale.z=1.06; back.position.z=-0.012*hs; root.add(back); }
+    // 팔
+    const arms=[];
+    for (const s of [-1,1]){ const grp=new T.Group(); grp.position.set(s*(rSh-rUA*0.6), ySh-H*0.028, 0); grp.rotation.z=s*0.13;
+      const up=armL*0.54, rEl=rUA*0.72, rFo=rUA*0.8, rWr=g==="F"?0.024:0.028;
+      grp.add(latheMesh([[0.001,0.03],[rUA*0.95,0.012],[rUA,-0.04],[rUA*0.9,-up*0.7],[rEl,-up],[rFo,-up-0.05],[rFo*0.9,-armL*0.75],[rWr,-armL+0.01],[0.001,-armL-0.002]], skin,{n:40,seg:32}));
+      const hand=ell(0.026*hs,0.075*hs,0.04*hs,skin); hand.position.set(0,-armL-0.06*hs,0.005); grp.add(hand);
+      grp.userData={s,up,armL}; root.add(grp); arms.push(grp); }
+    // 다리
+    const legs=[], legX=rHip*0.5, yTop=yCr+0.04;
+    for (const s of [-1,1]){ const grp=new T.Group(); grp.position.set(s*legX, yTop, 0); grp.rotation.z = -s*Math.atan((legX-0.05)/yTop);
+      grp.add(latheMesh([[0.001,0.045],[rAnkle*0.95,0.05],[rAnkle,yAnk+0.01],[rCalf*0.9,yCalf-0.06],[rCalf,yCalf],[rKnee,yKnee],[rThigh*0.9,(yKnee+yCr)/2],[rThigh,yCr-0.02],[rThigh*1.03,yCr+0.03],[0.001,yCr+0.05]].map(([r,y])=>[r,y-yTop]), skin,{seg:36}));
+      if (!look.shoes){ const foot=ell(0.034,0.03,0.105,skin); foot.position.set(0,0.035-yTop,0.045); grp.add(foot); }
+      grp.userData={s,yTop}; root.add(grp); legs.push(grp); }
+
+    // ----- 옷 -----
+    const fitPrefOf = it => it.fit;
+    let bW=0, bH=0;
+    function bottomLayer(it){ const G=garment(it,sizeOf(it)), mat=clothMat(it), nm=it.name;
+      const wG=Math.max(rWaist+0.008,Rc(G.waist)), hG=Math.max(rHip+0.01,Rc(G.hip)); bW=wG; bH=hG;
+      if (it.shape.startsWith("skirt")){ const long=it.shape==="skirt-l", yHem=long?yCalf-0.01:yCr-0.07, hemR=long?hG*1.55:(/H라인/.test(nm)?hG*1.0:hG*1.16);
+        const m=latheMesh([[hemR,yHem],[hG*1.01,yHip],[(wG+hG)/2,(yHip+yWaist)/2],[wG,yWaist+0.012]], mat,{seg:120}); m.scale.z=DZ*1.08;
+        if (/플리츠/.test(nm)) pleat(m.geometry,yHip,yHem,30,0.05); root.add(m);
+      } else {
+        const pel=latheMesh([[0.001,yCr-0.03],[hG*0.75,yCr-0.01],[hG,yHip],[wG,yWaist+0.01]], mat,{n:20}); pel.scale.z=DZ*1.06; root.add(pel);
+        const band=new T.Mesh(new T.TorusGeometry(wG*1.005,0.006,8,64),new T.MeshPhysicalMaterial({color:shade(COLORS[it.color].h,-.15),roughness:.7})); band.rotation.x=Math.PI/2; band.scale.y=DZ*1.06; band.position.y=yWaist+0.004; root.add(band);
+        const thG=Math.max(rThigh+0.01, G.thigh/(2*Math.PI)*k), short=it.shape==="pants-sh";
+        for (const L of legs){ const yT=L.userData.yTop, yHem=short?yKnee+0.09:0.055; let kneeR, hemR;
+          if (/레깅스/.test(nm)){ kneeR=rKnee+0.003; hemR=rAnkle+0.004; }
+          else if (it.shape==="pants-w"){ kneeR=thG*0.98; hemR=thG*1.03; }
+          else if (/부츠컷/.test(nm)){ kneeR=rKnee+0.009; hemR=rCalf+0.032; }
+          else if (/조거/.test(nm)){ kneeR=rKnee+0.02; hemR=rAnkle+0.008; }
+          else if (/스트레이트|치노|데님/.test(nm)){ kneeR=rKnee+0.018; hemR=rKnee+0.012; }
+          else { kneeR=rKnee+0.014; hemR=rAnkle+0.022; }
+          const pts = short ? [[thG*1.05,yHem],[thG*1.03,(yHem+yCr)/2],[thG,yCr+0.03]] : [[hemR,yHem],[(hemR+kneeR)/2,(yHem+yKnee)/2],[kneeR,yKnee],[(kneeR+thG)/2,(yKnee+yCr)/2],[thG,yCr+0.03]];
+          L.add(latheMesh(pts.map(([r,y])=>[r,y-yT]),mat,{seg:40}));
+          if (/카고/.test(nm)){ const pk=new T.Mesh(new T.BoxGeometry(0.014,0.13,0.1),mat); pk.position.set(L.userData.s*thG*0.98,(yKnee+yCr)/2-yT+0.02,0); pk.castShadow=true; L.add(pk); }
+        }
+      }
+    }
+    let topProf=null;
+    function upperLayer(it, layer){
+      const G=garment(it,sizeOf(it)), mat=clothMat(it), nm=it.name, isO=layer==="outer", isD=it.cat==="dress";
+      const fitF=({slim:.86,regular:.95,over:1.02})[it.fit];
+      const base = isO ? 0.012 : 0;
+      const rC=Math.max(Rc(G.chest), chestT+0.008)+base;
+      const rW=Math.max(rWaist+0.01+base, rC*fitF*(isO?0.97:0.92), bW+0.008);
+      const rHp=Math.max(rHip+0.012+base, rC*(it.fit==="over"?1.0:0.96), bH+0.008);
+      const rS=Math.max(rSh*0.84+0.006+base, G.shoulder*k/2*0.86);
+      let yHem;
+      if (isD) yHem = /롱|니트/.test(nm) ? yCalf+0.02 : yKnee-0.03;
+      else if (isO) yHem = it.shape==="outer-l" ? yKnee+0.03 : (/숏|크롭/.test(nm) ? yWaist-0.01 : yHip-0.05);
+      else yHem = /크롭/.test(nm) ? yWaist+0.025 : it.fit==="over" ? yHip-0.06 : yHip-0.025;
+      let pts=[];
+      if (isD){ const wW=Math.max(rWaist+0.008,Rc(G.waist)); pts.push([/플라워|린넨/.test(nm)?rHp*1.45:rHp*1.12,yHem]); if (yHem<yHip) pts.push([rHp*1.06,yHip]); pts.push([wW,yWaist]); }
+      else { pts.push([yHem<yHip-0.01?(it.shape==="outer-l"?rHp*1.13:rHp*1.02):yHem<yWaist?rHp*0.99:rW*1.02, yHem]); if (yHem<yHip-0.005) pts.push([rHp,yHip]); if (yHem<yWaist-0.005) pts.push([rW,yWaist]); }
+      pts.push([(rW+rC)/2,(yWaist+yChest)/2],[rC,yChest],[rC*0.97,yArm],[rS,ySh-H*0.025],[(rS+rNeck)/2*1.05,ySh+H*0.002],[rNeck*(isO?1.6:1.3),yNeck-0.006]);
+      if (topProf && isO) pts = pts.map(([r,y])=>[Math.max(r, rAt(topProf,y)+0.01), y]);
+      pts = incY(pts);
+      const open = isO && !/패딩|다운/.test(nm), gap=0.2;
+      const m=latheMesh(pts, mat, open?{phiStart:gap,phiLen:Math.PI*2-gap*2}:{});
+      const zs = DZ*(g==="F"?1.22:1.05)*(isO?1.06:1); m.scale.z=zs; root.add(m);
+      if (!isO) topProf=pts;
+      const frontZ = y => rAt(pts,y)*zs;
+      // 소매
+      const longS = !(it.shape==="top-s" || (isD && !/니트/.test(nm)));
+      const ease=({slim:0.005,regular:0.011,over:0.022})[it.fit]+(isO?0.014:0);
+      for (const a of arms){ const {up,armL:aL}=a.userData, rs=rUA+ease, end=longS?-aL+0.012:-up*0.55;
+        const sp = longS ? [[rs*0.6,0.03],[rs*1.02,0.0],[rs,-0.06],[rs*0.93,-up],[it.fit==="over"?rs*0.95:rs*0.82,end]] : [[rs*0.6,0.03],[rs*1.04,0.0],[rs*1.05,end]];
+        a.add(latheMesh(sp,mat,{seg:36,n:24})); }
+      // 디테일
+      const trim=new T.MeshPhysicalMaterial({color:shade(COLORS[it.color].h,-.12),roughness:.6});
+      if (/셔츠|블라우스/.test(nm) && !isO){ const col=new T.Mesh(new T.TorusGeometry(rNeck*1.38,0.011,10,48),clothMat(it)); col.rotation.x=Math.PI/2; col.scale.y=DZ*1.25; col.position.y=yNeck-0.004; root.add(col);
+        for (const s of [-1,1]){ const tip=new T.Mesh(new T.ConeGeometry(0.018,0.05,3),clothMat(it)); tip.position.set(s*0.022,yNeck-0.03,frontZ(yNeck-0.03)+0.004); tip.rotation.set(0.3,0,s*0.5+Math.PI); root.add(tip); }
+        const btn=new T.MeshPhysicalMaterial({color:"#F4F0EA",roughness:.3,clearcoat:.8});
+        for (let y=yNeck-0.06; y>Math.max(yHem,isD?yWaist:yHem)+0.03; y-=0.075){ const b=new T.Mesh(new T.CylinderGeometry(0.0055,0.0055,0.003,16),btn); b.rotation.x=Math.PI/2; b.position.set(0,y,frontZ(y)+0.002); root.add(b); } }
+      if (/가디건/.test(nm)){ const btn=new T.MeshPhysicalMaterial({color:"#FFF8EE",roughness:.15,clearcoat:1});
+        for (let y=yChest+0.03; y>yHem+0.02; y-=0.06){ const b=ell(0.006,0.006,0.004,btn); b.position.set(0,y,frontZ(y)+0.003); root.add(b);} }
+      if (/리본/.test(nm)) for (const s of [-1,1]){ const r=ell(0.03,0.016,0.008,clothMat(it)); r.position.set(s*0.026,yNeck-0.03,frontZ(yNeck-0.03)+0.01); r.rotation.z=s*0.4; root.add(r);
+        const tail=new T.Mesh(new T.BoxGeometry(0.014,0.12,0.004),clothMat(it)); tail.position.set(s*0.012,yNeck-0.1,frontZ(yNeck-0.1)+0.01); tail.rotation.z=s*0.12; root.add(tail); }
+      if (/후드/.test(nm)){ const hood=ell(0.12*hs,0.075*hs,0.085*hs,clothMat(it)); hood.position.set(0,yNeck+0.005,-rNeck*1.3); root.add(hood);
+        for (const s of [-1,1]){ const st=new T.Mesh(new T.CylinderGeometry(0.0025,0.0025,0.13,8),trim); st.position.set(s*0.03,yNeck-0.08,frontZ(yNeck-0.08)+0.006); root.add(st);} }
+      if (/니트|맨투맨|후드|가디건/.test(nm) && !isD){ const rib=new T.Mesh(new T.TorusGeometry(pts[0][0]*1.004,0.008,8,72),clothMat(it)); rib.rotation.x=Math.PI/2; rib.scale.y=zs; rib.position.y=yHem+0.006; root.add(rib); }
+      if (isO && open && /블레이저|코트|자켓/.test(nm) && !/데님|바람|파카|플리스|트위드/.test(nm)){
+        const lapM=clothMat(it); lapM.color=new T.Color(0xe9e4e4);
+        for (const s of [-1,1]){ const x0=Math.sin(gap)*rC, yA=yNeck-0.01, yB=yChest+0.01, yC=yWaist+0.04;
+          const v=[s*rNeck*1.15,yA,frontZ(yA)*0.9+0.004, s*(x0+0.045),yB,frontZ(yB)*Math.cos(gap)+0.006, s*x0*0.95,yC,frontZ(yC)*Math.cos(gap)+0.006];
+          const geo=new T.BufferGeometry(); geo.setAttribute("position",new T.Float32BufferAttribute(v,3)); geo.setAttribute("uv",new T.Float32BufferAttribute([0,1,1,.5,0,0],2)); geo.computeVertexNormals();
+          const lap=new T.Mesh(geo,lapM); lap.castShadow=true; root.add(lap); }
+        const btn=new T.MeshPhysicalMaterial({color:/트위드/.test(nm)?"#D8B66A":shade(COLORS[it.color].h,-.4),metalness:/트위드/.test(nm)?.8:0,roughness:.3});
+        for (const y of [yWaist+0.03, yWaist-0.04]) if (y>yHem+0.02){ const b=new T.Mesh(new T.CylinderGeometry(0.008,0.008,0.004,16),btn); b.rotation.x=Math.PI/2; b.position.set(-Math.sin(gap)*rC*1.02,y,frontZ(y)*Math.cos(gap)+0.004); root.add(b);} }
+      if (isO && /트위드/.test(nm)){ const gb=new T.MeshPhysicalMaterial({color:"#D8B66A",metalness:.85,roughness:.25});
+        for (let y=yChest; y>yHem+0.02; y-=0.055) for (const s of [-1,1]){ const b=new T.Mesh(new T.CylinderGeometry(0.0065,0.0065,0.004,16),gb); b.rotation.x=Math.PI/2; b.position.set(s*(Math.sin(gap)*rC+0.012),y,frontZ(y)*Math.cos(gap)+0.003); root.add(b);} }
+    }
+    function shoesLayer(it){ const mat=clothMat(it), nm=it.name, sneaker=/스니커즈|러닝|캔버스/.test(nm), heel=/펌프스|슬링백/.test(nm), boot=/부츠/.test(nm);
+      const sole=new T.MeshPhysicalMaterial({color:sneaker?"#F4F2EE":"#2A2420",roughness:.6}); const fw=({"좁음":.92,"보통":1,"넓음":1.1})[p.footWidth]||1;
+      for (const L of legs){ const yT=L.userData.yTop;
+        const up=ell(0.044*fw,sneaker?0.04:0.03,0.125,mat); up.position.set(0,(heel?0.065:0.04)-yT,0.05); if (heel) up.rotation.x=0.28; L.add(up);
+        const so=new T.Mesh(new T.CylinderGeometry(1,1,1,40),sole); so.scale.set(0.047*fw,sneaker?0.024:0.01,0.132); so.position.set(0,(sneaker?0.012:heel?0.035:0.006)-yT,0.05); if (heel) so.rotation.x=0.28; so.castShadow=true; L.add(so);
+        if (heel){ const h=new T.Mesh(new T.CylinderGeometry(0.007,0.011,0.06,12),sole); h.position.set(0,0.03-yT,-0.055); L.add(h); }
+        if (/메리제인/.test(nm)){ const st=new T.Mesh(new T.TorusGeometry(0.03,0.004,6,24,Math.PI),mat); st.position.set(0,0.05-yT,0.03); st.rotation.y=Math.PI/2; L.add(st); }
+        if (boot) L.add(latheMesh([[rAnkle+0.014,0.03],[rAnkle+0.014,0.12],[rCalf*0.95,0.21]].map(([r,y])=>[r,y-yT]),mat,{raw:true,seg:32}));
+      } }
+    function bagLayer(it){ const mat=clothMat(it), small=/미니|크로스/.test(it.name), cross=/크로스/.test(it.name), brief=/브리프|토트/.test(it.name);
+      const w=small?0.17:0.32, h=small?0.12:0.25, d=small?0.06:0.1;
+      const b=new T.Mesh(new T.BoxGeometry(w,h,d,4,4,2),mat); b.castShadow=true;
+      if (brief){ b.position.set(rSh+0.12, yCr-0.08, 0.02); b.rotation.y=Math.PI/2; root.add(b);
+        const hdl=new T.Mesh(new T.TorusGeometry(0.04,0.006,8,24,Math.PI),mat); hdl.position.set(rSh+0.12,yCr-0.08+h/2,0.02); hdl.rotation.y=Math.PI/2; root.add(hdl); return; }
+      b.position.set(rHip+d*0.6+0.035, yHip-0.01, 0.01); b.rotation.y=Math.PI/2; root.add(b);
+      const front=rChest*DZ*1.32; const pts = cross ? [new T.Vector3(-rSh*0.55,ySh+0.015,0), new T.Vector3(-rSh*0.25,yChest+0.02,front), new T.Vector3(rWaist*0.5,yWaist,rWaist*DZ*1.5), new T.Vector3(rHip+0.05,yHip+0.06,0.02)]
+        : [new T.Vector3(rSh*0.62,ySh+0.016,0.0), new T.Vector3(rSh*0.98,ySh-0.06,0.035), new T.Vector3(rHip+0.06,yHip+0.09,0.02)];
+      const tube=new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts),48,0.0045,8,false),mat); tube.castShadow=true; root.add(tube); }
+
+    if (look.dress) upperLayer(look.dress,"dress");
+    else { if (look.bottom) bottomLayer(look.bottom); if (look.top) upperLayer(look.top,"top"); }
+    if (look.outer) upperLayer(look.outer,"outer");
+    if (look.shoes) shoesLayer(look.shoes);
+    if (look.bag) bagLayer(look.bag);
+    root.userData.H=H; return root;
+  }
+
+  function mkRenderer(){ const r=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true}); r.outputEncoding=T.sRGBEncoding; r.toneMapping=T.NoToneMapping; r.shadowMap.enabled=true; r.shadowMap.type=T.PCFSoftShadowMap; r.setClearColor(0x000000,0); return r; }
+  function makeScene(r){ const sc=new T.Scene();
+    if (T.RoomEnvironment){ const pm=new T.PMREMGenerator(r); sc.environment=pm.fromScene(new T.RoomEnvironment(),0.04).texture; pm.dispose(); }
+    sc.add(new T.HemisphereLight(0xffffff,0xcfc2ba,0.38));
+    const key=new T.DirectionalLight(0xfff4ec,0.95); key.position.set(1.4,3.0,2.6); key.castShadow=true; key.shadow.mapSize.set(1024,1024);
+    Object.assign(key.shadow.camera,{left:-1,right:1,top:2.3,bottom:-0.2,near:0.5,far:8}); key.shadow.bias=-0.0005; key.shadow.radius=5; sc.add(key);
+    const rim=new T.DirectionalLight(0xffeef3,0.45); rim.position.set(-2,2.4,-2.2); sc.add(rim);
+    const fill=new T.DirectionalLight(0xf3f6ff,0.18); fill.position.set(-2,1.2,2); sc.add(fill);
+    const ground=new T.Mesh(new T.CircleGeometry(1.6,64), new T.ShadowMaterial({opacity:.17})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; sc.add(ground);
+    return sc; }
+  function frame(cam, H, aspect, theta, zoom){ cam.aspect=aspect; const f=Math.tan(cam.fov*Math.PI/360);
+    const dist=Math.max((H*1.1/2)/f, (0.82/2)/(f*aspect))/(zoom||1); const ty=H*0.5;
+    cam.position.set(Math.sin(theta)*dist, ty+H*0.04, Math.cos(theta)*dist); cam.lookAt(0,ty,0); cam.updateProjectionMatrix(); return {dist,ty}; }
+  function disposeTree(o){ o.traverse(n=>{ if (n.geometry) n.geometry.dispose(); if (n.material) (Array.isArray(n.material)?n.material:[n.material]).forEach(m=>m.dispose()); }); }
+
+  // 라이브(회전 가능) 뷰 — 한 번에 하나
+  let L=null;
+  function ensureLive(){ if (L) return L;
+    const r=mkRenderer(), sc=makeScene(r), cam=new T.PerspectiveCamera(24,1,0.05,30);
+    const ctl=T.OrbitControls?new T.OrbitControls(cam,r.domElement):null;
+    if (ctl){ Object.assign(ctl,{enablePan:false,enableDamping:true,dampingFactor:.08,minPolarAngle:Math.PI*0.32,maxPolarAngle:Math.PI*0.56,rotateSpeed:.7,autoRotateSpeed:1.6}); }
+    L={r,sc,cam,ctl,fig:null,host:null,dirty:true};
+    if (ctl) ctl.addEventListener("change",()=>{ L.dirty=true; });
+    const loop=()=>{ requestAnimationFrame(loop); if (!L.host||!L.host.isConnected) return; if (ctl) ctl.update(); if (L.dirty||ctl&&ctl.autoRotate){ r.render(sc,cam); L.dirty=false; } };
+    loop(); window.addEventListener("resize",()=>{ if (L.host&&L.host.isConnected) sizeLive(); }); return L; }
+  function sizeLive(){ const w=L.host.clientWidth||300, h=L.host.clientHeight||400; L.r.setPixelRatio(Math.min(2,window.devicePixelRatio||1)); L.r.setSize(w,h,false); L.cam.aspect=w/h; L.cam.updateProjectionMatrix(); L.dirty=true; }
+  function setFig(cfg, reframe){ if (L.fig){ L.sc.remove(L.fig); disposeTree(L.fig); }
+    L.fig=build(cfg.g,cfg.p,cfg.look||{},cfg.sizes||{}); L.sc.add(L.fig); L.cfg=cfg;
+    if (reframe){ const H=cfg.p.height/100, {ty}=frame(L.cam,H,L.cam.aspect,cfg.theta??0.28); if (L.ctl){ L.ctl.target.set(0,ty,0); L.ctl.minDistance=L.cam.position.length()*0.45; L.ctl.maxDistance=L.cam.position.length()*1.4; L.ctl.update(); } }
+    L.dirty=true; }
+  function view(theta){ if (!L||!L.ctl) return; const t=L.ctl.target, d=L.cam.position.distanceTo(t); L.cam.position.set(t.x+Math.sin(theta)*d, t.y+L.cfg.p.height/100*0.04, t.z+Math.cos(theta)*d); L.ctl.update(); L.dirty=true; }
+  function mountLive(host, cfg, opts={}){ const l=ensureLive(); l.host=host; host.innerHTML=""; host.appendChild(l.r.domElement);
+    const bar=document.createElement("div"); bar.className="fctl";
+    bar.innerHTML=`<button data-fview="0">정면</button><button data-fview="1.5708">측면</button><button data-fview="3.1416">후면</button><button data-fspin aria-pressed="${!!(l.ctl&&l.ctl.autoRotate)}">회전</button>`;
+    host.appendChild(bar);
+    const bd=document.createElement("div"); bd.className="fbadge"; bd.textContent=`${cfg.p.height}cm · 드래그로 360° 회전`; host.appendChild(bd);
+    sizeLive(); setFig(cfg,true); }
+  function update(cfg){ if (!L||!L.host||!L.host.isConnected) return false; setFig(Object.assign({},L.cfg,cfg), false); return true; }
+  document.addEventListener("click", e=>{ const b=e.target.closest("[data-fview],[data-fspin]"); if (!b||!L) return; e.stopPropagation();
+    if (b.dataset.fview!==undefined) view(+b.dataset.fview); else if (L.ctl){ L.ctl.autoRotate=!L.ctl.autoRotate; b.setAttribute("aria-pressed",L.ctl.autoRotate); } }, true);
+
+  // 스냅샷(이미지) — 카드·코디·상세용
+  let Sn=null; const cache=new Map(); let q=[], busy=false;
+  const bodyKey=p=>["height","shoulder","chest","underbust","waist","hip","thigh","calf","arm","armLen","inseam","shoulderType","skin","hair","hairColor","footWidth","fitTop","fitBottom","fitOuter","fit"].map(k=>p[k]).join("|");
+  function snapshot(cfg, w, h, theta){ const key=[cfg.g,bodyKey(cfg.p),Object.values(cfg.look||{}).map(i=>i.id).join(","),JSON.stringify(cfg.sizes||{}),w,h,theta].join("#");
+    if (cache.has(key)) return cache.get(key);
+    if (!Sn){ const r=mkRenderer(); Sn={r,sc:makeScene(r),cam:new T.PerspectiveCamera(24,1,0.05,30)}; }
+    Sn.r.setPixelRatio(Math.min(1.6,window.devicePixelRatio||1)); Sn.r.setSize(w,h,false);
+    const f=build(cfg.g,cfg.p,cfg.look||{},cfg.sizes||{}); Sn.sc.add(f); frame(Sn.cam,cfg.p.height/100,w/h,theta);
+    Sn.r.render(Sn.sc,Sn.cam); const url=Sn.r.domElement.toDataURL("image/png"); Sn.sc.remove(f); disposeTree(f);
+    if (cache.size>160) cache.delete(cache.keys().next().value); cache.set(key,url); return url; }
+  function pump(){ if (!q.length){ busy=false; return; } busy=true; const j=q.shift();
+    if (j.el.isConnected){ try { j.el.innerHTML=`<img alt="3D 착용 이미지" src="${snapshot(j.cfg,j.o.w||300,j.o.h||420,j.o.theta??0.32)}">`; } catch(err){ j.el.innerHTML=j.fallback; } }
+    setTimeout(pump,16); }
+  function queueSnap(el,cfg,o,fallback){ q.push({el,cfg,o,fallback}); if (!busy) setTimeout(pump,0); }
+  return {ok, mountLive, update, queueSnap, view};
+})();
+
+let FIGQ=[], FIGN=0;
+function figHTML(kind, look, sizes={}, opts={}){ const id="fig"+(++FIGN), g=opts.g||S.g, p=opts.p||S.profile[g];
+  const fb=avatar(g,p,look,sizes,{ruler:!!opts.ruler}); FIGQ.push({id,kind,look,sizes,opts,g,fb});
+  return `<div class="fig ${opts.cls||kind}" id="${id}">${Fig3D.ok?'<div class="fload"></div>':fb}</div>`; }
+function flushFigs(){ const jobs=FIGQ; FIGQ=[]; if (!Fig3D.ok) return;
+  for (const j of jobs){ const el=document.getElementById(j.id); if (!el) continue; const cfg={g:j.g,p:j.opts.p||S.profile[j.g],look:j.look,sizes:j.sizes,theta:j.opts.theta};
+    try { if (j.kind==="live") Fig3D.mountLive(el,cfg,j.opts); else Fig3D.queueSnap(el,cfg,j.opts,j.fb); } catch(err){ el.innerHTML=j.fb; } } }
+
+/* ---------- 공통 렌더 조각 ---------- */
+const kwFor = it => `${it.g==="F"?"여성":"남성"} ${COLORS[it.color].n} ${it.kw}`;
+const activeSites = (g=S.g) => SITES.filter(s=>S.sites.includes(s.id) && (!s.g || s.g===g));
+const siteA = (s, kw) => `<a class="site" href="${s.u}${encodeURIComponent(kw)}" target="_blank" rel="noopener"${s.note?` title="${s.note}"`:""}><i style="background:${s.c}"></i>${s.n}</a>`;
+const siteLinks = kw => activeSites().map(s=>siteA(s,kw)).join("");
+const siteGroups = kw => SITE_GROUPS.map(gr=>{ const l=activeSites().filter(s=>s.grp===gr); return l.length?`<div class="sg"><span>${gr}</span><div class="sites">${l.map(s=>siteA(s,kw)).join("")}</div></div>`:""; }).join("");
+function openShop(list, title){
+  $("#shopDlg").classList.remove("wide");
+  $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">쇼핑몰에서 찾기 · ${activeSites().length}곳</div><h3>${esc(title)}</h3></div><button class="btn sm" data-close>닫기</button></div>
+    <p class="note" style="margin:0">검색어를 고친 뒤 원하는 쇼핑몰을 누르면 해당 쇼핑몰의 검색 결과가 새 창으로 열려요. 가격·재고·반품 조건은 판매처에서 최종 확인해 주세요.</p>
+    ${list.map((x,i)=>`<div class="kw"><label class="field" for="kw${i}">${esc(x.label)}<input id="kw${i}" class="input" value="${esc(x.kw)}" data-i="${i}"></label><div id="ks${i}" class="fs" style="gap:8px">${siteGroups(x.kw)}</div></div>`).join("")}`;
+  const d = $("#shopDlg"); if (!d.open) d.showModal();
+  d.querySelectorAll("input[data-i]").forEach(inp => inp.oninput = () => { $("#ks"+inp.dataset.i).innerHTML = siteGroups(inp.value); });
+}
+
+function qrSVG(text){ try { const q=qrcode(0,"M"); q.addData(text); q.make(); return q.createSvgTag(5,2); } catch(e){ return `<p class="small">${esc(text)}</p>`; } }
+function referText(){ return `옷 고를 때 고민된다면 OTJAL!\n내 체형으로 만든 3D 피규어에 입혀 보고, 24개 쇼핑몰에서 나에게 맞는 옷만 골라줘요.\n추천코드: ${S.refCode}\nAndroid 앱 다운로드: ${APK_URL}`; }
+function openQR(){ const d=$("#shopDlg"); d.classList.remove("wide");
+  $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">Download</div><h3>OTJAL 앱 다운로드</h3></div><button class="btn sm" data-close>닫기</button></div>
+  <div class="qrbox"><div class="qr">${qrSVG(APK_URL)}</div><div class="fs" style="gap:8px">
+    <p style="margin:0">휴대폰 카메라로 QR을 비추면 Android 앱(APK)을 내려받을 수 있어요.</p>
+    <p class="note" style="margin:0">v${APP_VERSION} · Android 5.0 이상 · 설치할 때 "출처를 알 수 없는 앱 설치"를 한 번 허용해야 해요. iPhone은 아직 지원하지 않아요.</p>
+    <div class="chips"><a class="btn sm pri" href="${APK_URL}" target="_blank" rel="noopener">APK 바로 받기</a><a class="btn sm" href="${REPO_URL}" target="_blank" rel="noopener">GitHub 저장소</a></div>
+  </div></div>`;
+  if (!d.open) d.showModal(); }
+function openRefer(){ const d=$("#shopDlg"); d.classList.remove("wide");
+  $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">Invite friends</div><h3>친구에게 OTJAL 추천하기</h3></div><button class="btn sm" data-close>닫기</button></div>
+  <div class="qrbox"><div class="qr">${qrSVG(APK_URL)}</div><div class="fs" style="gap:10px">
+    <div><div class="sub">내 추천코드</div><div class="pbig" style="letter-spacing:.06em">${S.refCode}</div></div>
+    <div class="copybox" id="referMsg">${esc(referText())}</div>
+    <div class="chips"><button class="btn sm pri" data-act="share">공유하기</button><button class="btn sm" data-act="copyRefer">메시지 복사</button></div>
+    <p class="note" style="margin:0" id="referNote">카카오톡·문자 등에 붙여넣어 보내 보세요. 친구가 QR을 찍어도 바로 받을 수 있어요.</p>
+  </div></div>`;
+  if (!d.open) d.showModal(); }
+function copyText(t, noteEl){ const done=()=>{ if (noteEl) noteEl.textContent="복사했어요. 원하는 곳에 붙여넣어 주세요."; };
+  try { if (window.OTJALApp && OTJALApp.copy){ OTJALApp.copy(t); done(); return; } } catch(e){}
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(()=>selectBox(noteEl)); else selectBox(noteEl); }
+function selectBox(noteEl){ const el=$("#referMsg"); if (el){ const r=document.createRange(); r.selectNodeContents(el); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); } if (noteEl) noteEl.textContent="메시지를 선택해 두었어요. 길게 눌러 복사해 주세요."; }
+window.otjalBack = function(){ const d=$("#shopDlg"); if (d && d.open){ d.close(); return true; } if (S.tab!=="home"){ go("home"); return true; } return false; };
+
+/* 현재 피팅 착장 + 특정 아이템을 바꿔 입힌 착장 */
+function ensureLook(g){
+  const f = S.fit[g];
+  if (!["top","bottom","dress","outer","shoes","bag"].some(c=>f[c] && BYID[f[c]])) {
+    const o = outfits(g, S.pick.occ, 1)[0]; if (o) for (const [c,it] of Object.entries(o.look)) f[c]=it.id;
+  }
+}
+function curLook(g=S.g){ const f=S.fit[g], look={}; for (const c of ["top","bottom","dress","outer","shoes","bag"]) if (f[c] && BYID[f[c]]) look[c]=BYID[f[c]]; return look; }
+function lookWith(it, keepOuter=false){ const look = {...curLook(it.g)};
+  if (!keepOuter && (it.cat==="top"||it.cat==="dress")) delete look.outer;
+  if (it.cat==="dress"){ delete look.top; delete look.bottom; } if (it.cat==="top"||it.cat==="bottom") delete look.dress;
+  if (it.cat==="bottom" && !look.top) { const t=ranked(it.g).find(x=>x.it.cat==="top"); if (t) look.top=t.it; }
+  if (it.cat==="top" && !look.bottom) { const b=ranked(it.g).find(x=>x.it.cat==="bottom"); if (b) look.bottom=b.it; }
+  look[it.cat]=it; return look; }
+function wear(it){ const f=S.fit[it.g]; f[it.cat]=it.id; if (it.cat==="dress"){ f.top=""; f.bottom=""; } if (it.cat==="top"||it.cat==="bottom") f.dress=""; }
+
+function card(x, rank){
+  const {it, sc} = x, p = P(), wished = S.wish.includes(it.id), worn = S.fit[it.g][it.cat]===it.id;
+  const sz = sc.size;
+  const szTxt = sz ? (sz.idx===null ? `내 사이즈 ${sz.name}` : `추천 ${sz.name}` + (sz.regions[1]?` · 가슴 ${sz.regions[1].t}`: sz.regions[0]?` · ${sz.regions[0].k} ${sz.regions[0].t}`:"")) : "사이즈 무관";
+  const lvl = sz && sz.regions && sz.regions.some(r=>r.lv==="bad") ? "bad" : "ok";
+  return `<article class="card">
+    <button class="img img2" data-act="detail" data-id="${it.id}" aria-label="${it.name} 상세 보기">
+      <span class="g">${thumb(it)}</span><span class="a">${figHTML("snap",lookWith(it),S.fit[it.g].size,{cls:"card",w:240,h:336,theta:.32})}</span>
+      <span class="score">매칭 <b>${sc.total}</b>%</span>${rank?`<span class="rank sticker">${rank}</span>`:""}<span class="ex">예시 상품 · 착용 미리보기</span></button>
+    <div class="body">
+      <div><div class="nm">${it.name}</div><div class="pr">${won(it.price)}</div></div>
+      <div class="chips"><span class="tag"><span class="dot" style="background:${COLORS[it.color].h}"></span>${COLORS[it.color].n}</span><span class="tag ${lvl}">${szTxt}</span></div>
+      <div class="small muted">${(DETAIL[it.id]||[""])[0]}</div>
+      <div class="why">${sc.reasons.map(r=>`<span>${r}</span>`).join("")}</div>
+      <details><summary>추천 점수 자세히</summary><div class="bars">${Object.keys(W).map(k=>`<span>${PARTNAME[k]}</span><i><b style="width:${Math.round(sc.parts[k]*100)}%"></b></i><em>${Math.round(Wof(p)[k]*100)}</em>`).join("")}</div></details>
+      <div class="acts">
+        <button class="btn sm pri" data-act="detail" data-id="${it.id}">상세·구매처</button>
+        <button class="btn sm" data-act="wear" data-id="${it.id}" aria-pressed="${worn}">${worn?"입는 중":"입혀보기"}</button>
+        <button class="btn sm" data-act="wish" data-id="${it.id}" aria-pressed="${wished}">${wished?"♥":"♡"}</button>
+      </div>
+      <div class="acts"><button class="btn sm" data-act="like" data-id="${it.id}">취향이에요</button><button class="btn sm" data-act="hide" data-id="${it.id}">관심 없어요</button></div>
+    </div></article>`;
+}
+
+/* ---------- 상품 상세 ---------- */
+function measureTable(it){
+  const g=it.g, p=P(), t=SZ[g];
+  if (it.cat==="shoes"){ const base=g==="F"?[220,230,240,250,260]:[250,260,270,280,290];
+    return `<table class="mt"><tr><th>사이즈</th>${base.map(v=>`<th class="${v===p.shoe?"on":""}">${v}</th>`).join("")}</tr></table><p class="note" style="margin:6px 0 0">내 발 사이즈 ${p.shoe}mm 기준으로 표시했어요. 발볼이 넓다면 5mm 크게 고르세요.</p>`; }
+  if (it.cat==="bag") return `<p class="small muted" style="margin:0">가방은 사이즈 구분이 없어요.</p>`;
+  const rs = recSize(it,p), cur = S.fit[g].size[it.id]!=null ? S.fit[g].size[it.id] : rs.idx;
+  const rows = [];
+  if (["top","outer","dress"].includes(it.cat)) { rows.push(["어깨너비", i=>garment(it,i).shoulder, p.shoulder]); rows.push(["가슴단면", i=>garment(it,i).chest/2, p.chest/2]); }
+  if (["bottom","dress"].includes(it.cat)) { rows.push(["허리단면", i=>garment(it,i).waist/2, p.waist/2]); rows.push(["엉덩이단면", i=>garment(it,i).hip/2, p.hip/2]); }
+  rows.push(["총장", i=>lengthOf(it,i), null]);
+  const f1 = v => (Math.round(v*2)/2).toFixed(1).replace(".0","");
+  return `<div class="tw"><table class="mt"><tr><th>cm</th>${t.names.map((n,i)=>`<th class="${i===cur?"on":""}">${n}${i===rs.idx?" ★":""}</th>`).join("")}<th class="me">내 몸</th></tr>
+    ${rows.map(([k,fn,me])=>`<tr><td>${k}</td>${t.names.map((n,i)=>`<td class="${i===cur?"on":""}">${f1(fn(i))}</td>`).join("")}<td class="me">${me==null?"–":f1(me)}</td></tr>`).join("")}</table></div>
+    <p class="note" style="margin:6px 0 0">★ 추천 사이즈 · 단면은 둘레의 절반이에요. 예시 실측이며 실제 상품은 판매처 실측표를 확인해 주세요.</p>`;
+}
+function openDetail(id){
+  const it=BYID[id], g=it.g, p=P(), sc=score(it,p), rs=sc.size, D=DETAIL[id]||["",""];
+  const cur = rs && rs.idx!==null ? (S.fit[g].size[it.id]!=null ? S.fit[g].size[it.id] : rs.idx) : null;
+  const wished=S.wish.includes(id), kw=kwFor(it);
+  $("#shopDlg").classList.add("wide");
+  $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">${CATNAME[it.cat]} · 예시 상품</div><h2>${it.name}</h2></div><button class="btn sm" data-close>닫기</button></div>
+  <div class="det">
+    <div class="detL">
+      <div class="pair"><div class="gbox">${thumb(it)}</div>${figHTML("snap",lookWith(it),S.fit[g].size,{cls:"look",w:420,h:620,theta:.3})}</div>
+      <div class="angles">${[[0,"정면"],[1.5708,"측면"],[3.1416,"후면"]].map(([t])=>figHTML("snap",lookWith(it),S.fit[g].size,{cls:"snap",w:240,h:336,theta:t})).join("")}</div>
+      ${rs && rs.idx!==null ? `<div class="fs" style="gap:6px"><span class="small muted">사이즈를 바꿔 입혀 보세요</span><div class="sizes">${SZ[g].names.map((n,i)=>`<button data-dsize="${it.id}" data-i="${i}" aria-pressed="${cur===i}" class="${rs.idx===i?"rec":""}">${n}</button>`).join("")}</div>
+        <div class="chips">${regions(it,cur,p).map(r=>`<span class="tag ${r.lv}">${r.k} ${r.t}</span>`).join("")}</div></div>` : ""}
+    </div>
+    <div class="detR fs">
+      <div class="pbig">${won(it.price)} <span class="small muted">예시 가격</span></div>
+      <div class="chips"><span class="tag" style="color:var(--acc)">매칭 ${sc.total}%</span>${sc.reasons.map(r=>`<span class="tag">${r}</span>`).join("")}</div>
+      <dl class="spec">
+        <dt>색상</dt><dd><span class="dot" style="background:${COLORS[it.color].h}"></span> ${COLORS[it.color].n} · ${COLORS[it.color].pc.join("·")} 톤</dd>
+        <dt>소재</dt><dd>${D[0]}</dd>
+        <dt>핏</dt><dd>${FITS[it.fit]}핏${rs?` · 추천 사이즈 <b>${rs.name}</b>`:""}</dd>
+        <dt>시즌</dt><dd>${it.seasons.join(" · ")}</dd>
+        <dt>추천 상황</dt><dd>${it.occ.join(" · ")}</dd>
+        <dt>스타일</dt><dd>${it.styles.join(" · ")}</dd>
+        <dt>디테일</dt><dd>${D[1]}</dd>
+        <dt>세탁</dt><dd>${care(D[0])}</dd>
+      </dl>
+      <div><h3 style="font-size:15px;margin-bottom:6px">사이즈 실측</h3>${measureTable(it)}</div>
+      <div class="chips"><button class="btn sm" data-act="wish" data-id="${id}" aria-pressed="${wished}" data-stay="1">${wished?"♥ 찜함":"♡ 찜하기"}</button><button class="btn sm" data-act="wear" data-id="${id}" data-stay="1">내 아바타에 입히기</button><button class="btn sm" data-act="try" data-id="${id}">피팅룸에서 보기</button></div>
+      <div class="kw"><label class="field" for="dkw">구매처 검색어 · 고쳐서 검색할 수 있어요<input id="dkw" class="input" value="${esc(kw)}"></label><div id="dks" class="fs" style="gap:8px">${siteGroups(kw)}</div>
+      <p class="note" style="margin:0">MVP 단계의 예시 상품이라 특정 판매처 상품 페이지 대신, 같은 조건의 상품을 각 쇼핑몰 검색 결과로 보여드려요.</p></div>
+    </div>
+  </div>`;
+  const d=$("#shopDlg"); if (!d.open) d.showModal(); flushFigs();
+  $("#dkw").oninput = e => { $("#dks").innerHTML = siteGroups(e.target.value); };
+}
+
+/* ---------- 탭 ---------- */
+const TABS = [["home","오늘의 PICK"],["style","내 스타일"],["recs","맞춤 추천"],["coordi","상황별 코디"],["fit","피팅룸"],["wish","찜"],["brand","브랜드"]];
+function renderTabs(){
+  $("#tabs").innerHTML = TABS.map(([k,n])=>`<button data-go="${k}" ${S.tab===k?'aria-current="page"':""}>${n}${k==="wish"&&S.wish.filter(id=>BYID[id].g===S.g).length?`<span class="cnt">${S.wish.filter(id=>BYID[id].g===S.g).length}</span>`:""}</button>`).join("");
+  $("#gF").setAttribute("aria-pressed", S.g==="F"); $("#gM").setAttribute("aria-pressed", S.g==="M");
+  document.documentElement.dataset.g = S.g;
+  applyTheme(); $("#verBadge").textContent = "v"+APP_VERSION; $("#footVer").textContent = `${APP_NAME} v${APP_VERSION} · AI Personal Fashion Stylist & Shopping Assistant`;
+  document.querySelectorAll("[data-theme-set]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.themeSet===S.theme));
+}
+function applyTheme(){ const r=document.documentElement; if (S.theme==="system") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", S.theme); }
+function go(tab){ S.tab=tab; save(); render(); window.scrollTo({top:0}); }
+function render(){
+  renderTabs();
+  const m = $("#main");
+  m.innerHTML = ({home:vHome, style:vStyle, recs:vRecs, coordi:vCoordi, fit:vFit, wish:vWish, brand:vBrand})[S.tab]();
+  if (S.tab==="style") bindStyle();
+  flushFigs();
+}
+
+/* --- 홈 --- */
+function vHome(){
+  const g=S.g, p=P(), list=outfits(g, S.pick.occ, 5);
+  const o = list.length ? list[S.pick.i % list.length] : null;
+  const top = ranked(g).slice(0,4);
+  return `<section class="tab">
+  <div class="hero">
+    <div class="hero-l">
+      <div class="eyebrow">AI Personal Stylist · ${g==="F"?"Women":"Men"}</div>
+      <h1>오늘 뭐 입지?<br><em>OTJAL</em>이 골라줄게요</h1>
+      <p class="lead">체형과 취향을 한 번만 알려주세요. 내 몸에 맞춘 3D 피규어에 직접 입혀 보고, 24개 쇼핑몰에서 나에게 맞는 옷만 골라 드려요.</p>
+      <div><div class="small muted" style="margin-bottom:6px">어디 가세요?</div>
+      <div class="chips">${OCCS.map(x=>`<button class="chip" data-occ="${x}" aria-pressed="${S.pick.occ===x}">${x}</button>`).join("")}</div></div>
+      <div class="chips"><button class="btn big pri" data-act="repick">${S.pick.i? "다른 걸로 골라줘" : "딱 하나만 골라줘"}</button><button class="btn big" data-go="style">내 스타일 설정</button></div>
+    </div>
+    <div class="stage pop" id="stage">
+      <span class="sticker">Today's Pick</span>
+      ${o ? figHTML("live",o.look,{},{cls:"live"}) : `<p class="muted">조건에 맞는 코디가 없어요. 스타일 설정을 넓혀 보세요.</p>`}
+      ${o ? `<div class="lookList">
+        <div class="eyebrow">${S.pick.occ}룩 · 매칭 ${o.score}%</div>
+        ${o.items.map(it=>{const z=recSize(it,p);return `<div class="lookItem"><span class="th">${thumb(it)}</span><span style="min-width:0"><b>${it.name}</b><span class="muted">${won(it.price)}${z?` · ${z.name}`:""}</span></span></div>`}).join("")}
+        <div class="total"><span>합계</span><b>${won(o.total)}</b></div>
+        <div class="chips"><button class="btn sm pri" data-act="shopLook" data-li="${S.pick.i % list.length}" data-o="${S.pick.occ}">한번에 찾기</button><button class="btn sm" data-act="tryLook" data-li="${S.pick.i % list.length}" data-o="${S.pick.occ}">피팅룸</button></div>
+      </div>` : ""}
+    </div>
+  </div>
+  <div class="pain">
+    <div><i>01</i><b>선택장애 해결</b><span class="small muted">수백 개 대신 매칭 점수가 높은 3개만, 그래도 고민되면 딱 하나만.</span></div>
+    <div><i>02</i><b>3D 피규어로 먼저 입어보기</b><span class="small muted">내 체형 치수로 만든 3D 피규어에 사이즈별로 입혀 핏을 미리 봐요.</span></div>
+    <div><i>03</i><b>쇼핑몰 한 번에</b><span class="small muted">네이버·다음 쇼핑하우·쿠팡·G마켓·옥션·11번가·SSG·롯데ON·무신사·LF몰·SSF SHOP 등 ${SITES.length}곳 검색 연결.</span></div>
+  </div>
+  <div class="head"><div><div class="eyebrow">For you</div><h2>지금 나에게 잘 맞는 아이템</h2></div><button class="btn" data-go="recs">전체 추천 보기</button></div>
+  <div class="grid">${top.map((x,i)=>card(x, i===0?"BEST":null)).join("")}</div>
+  </section>`;
+}
+
+/* --- 내 스타일 --- */
+function vStyle(){
+  const g=S.g, p=P(), t=SZ[g];
+  const BODY = [
+    ["기본",[["height","키","cm",140,200,1],["weight","몸무게","kg",35,130,1]]],
+    ["상체",[["shoulder","어깨너비","cm",30,56,.5],["chest","가슴둘레","cm",70,130,.5],...(g==="F"?[["underbust","가슴밑둘레","cm",60,110,.5]]:[]),["arm","팔뚝둘레","cm",20,45,.5],["armLen","팔길이","cm",45,72,.5]]],
+    ["하체",[["waist","허리둘레","cm",54,120,.5],["hip","엉덩이둘레","cm",76,130,.5],["thigh","허벅지둘레","cm",40,80,.5],["calf","종아리둘레","cm",26,50,.5],["inseam","다리길이(안쪽)","cm",60,95,.5]]],
+    ["발",[["shoe","발 사이즈","mm",210,310,5]]]
+  ];
+  const mbox = ([k,l,u,mn,mx,st]) => `<div class="mbox"><label for="p-${k}">${l}<b><span id="v-${k}">${p[k]}</span>${u}</b></label><input type="range" id="p-${k}" data-k="${k}" min="${mn}" max="${mx}" step="${st}" value="${p[k]}"></div>`;
+  const one = (k, opts, lab) => `<div><div class="sub">${lab}</div><div class="chips">${opts.map(([v,n])=>`<button class="chip" data-one="${k}" data-v="${v}" aria-pressed="${p[k]===v}">${n||v}</button>`).join("")}</div></div>`;
+  const multi = (k, opts, lab, note) => `<div><div class="sub">${lab}${note?` <span class="muted" style="font-weight:400">${note}</span>`:""}</div><div class="chips">${opts.map(v=>`<button class="chip" data-multi="${k}" data-v="${v}" aria-pressed="${(p[k]||[]).includes(v)}">${v}</button>`).join("")}</div></div>`;
+  const sw = (k, no) => `<div class="chips">${Object.entries(COLORS).map(([c,o])=>`<span class="swl"><button class="sw ${no?"no":""}" style="background:${o.h}" data-multi="${k}" data-v="${c}" aria-pressed="${(p[k]||[]).includes(c)}" aria-label="${o.n}"></button>${o.n}</span>`).join("")}</div>`;
+  const cats = ["top","bottom",...(g==="F"?["dress"]:[]),"outer","shoes","bag"];
+  const fitOpts = [["slim","슬림"],["regular","레귤러"],["over","오버"]], fitB=[["slim","슬림"],["regular","레귤러"],["over","와이드"]];
+  const excl = ITEMS[g].filter(it=>excluded(it,p)).length;
+  return `<section class="tab">
+  <div class="head"><div><div class="eyebrow">My Style · ${g==="F"?"Women":"Men"}</div><h2>내 스타일 설정</h2><p class="muted">한 번만 설정하면 추천·코디·3D 피팅에 바로 반영돼요. 입력한 정보는 이 기기에만 저장됩니다.</p></div></div>
+  <div class="prof">
+   <div class="fs">
+    <div class="panel fs"><h3>체형 <small>슬라이더를 움직이면 3D 피규어가 바로 바뀌어요</small></h3>
+      <div class="chips" style="align-items:center"><span class="small muted">빠르게 채우기</span>${t.names.map((n,i)=>`<button class="chip" data-preset="${i}">평소 ${n}</button>`).join("")}<button class="chip" data-act="estimate">키·몸무게로 추정</button></div>
+      ${BODY.map(([gr,list])=>`<div><div class="sub">${gr}</div><div class="measure">${list.map(mbox).join("")}</div></div>`).join("")}
+      ${one("footWidth",[["좁음"],["보통"],["넓음"]],"발볼")}
+      ${one("shape",Object.keys(SHAPES).map(k=>[k]),"골격 타입")}<p class="note" style="margin:-8px 0 0">${SHAPES[p.shape]||""}</p>
+      ${one("shoulderType",[["직각","직각 어깨"],["보통"],["처진","처진 어깨"]],"어깨 형태")}
+      <div class="fields">
+        <label class="field" for="p-skin">피부 톤 (피규어)<select id="p-skin" data-k="skin">${["밝은","중간","웜","딥"].map(v=>`<option ${p.skin===v?"selected":""}>${v}</option>`).join("")}</select></label>
+        <label class="field" for="p-hair">헤어 길이 (피규어)<select id="p-hair" data-k="hair">${["숏","단발","중단발","긴머리","묶음"].map(v=>`<option ${p.hair===v?"selected":""}>${v}</option>`).join("")}</select></label>
+        <label class="field" for="p-hairColor">헤어 색 (피규어)<select id="p-hairColor" data-k="hairColor">${["블랙","흑갈","브라운","밀크브라운","애쉬"].map(v=>`<option ${p.hairColor===v?"selected":""}>${v}</option>`).join("")}</select></label>
+        <label class="field" for="p-age">연령대 (선택)<select id="p-age" data-k="age">${["20대 초반","20대 중반","20대 후반","30대 초반","30대 중반","30대 후반","40대 이상"].map(a=>`<option ${p.age===a?"selected":""}>${a}</option>`).join("")}</select></label>
+      </div>
+    </div>
+    <div class="panel fs"><h3>스타일 <small>여러 개 골라도 돼요</small></h3>
+      ${multi("styles",STYLES[g],"좋아하는 스타일")}
+      ${one("fitTop",fitOpts,"상의 핏")}${one("fitBottom",fitB,"하의 핏")}${one("fitOuter",fitOpts,"아우터 핏")}
+      ${one("topLen",[["크롭"],["기본"],["롱"]],"상의 기장")}${g==="F"?one("skirtLen",[["미니"],["미디"],["롱"]],"스커트·원피스 기장"):""}
+      ${multi("patterns",["무지","스트라이프","플라워","트위드"],"좋아하는 패턴","(안 고르면 모두)")}
+      ${multi("materials",MATS,"좋아하는 소재")}
+      ${multi("avoidMaterials",MATS,"피하고 싶은 소재","(추천에서 빠져요)")}
+      ${multi("avoidItems",AVOID[g],"피하고 싶은 아이템","(추천에서 빠져요)")}
+      ${excl?`<p class="note" style="margin:0">현재 설정으로 ${excl}개 아이템이 추천에서 제외돼요.</p>`:""}
+    </div>
+    <div class="panel fs"><h3>컬러</h3>
+      ${one("pc",PCS.map(v=>[v]),"퍼스널컬러")}
+      <div><div class="sub">좋아하는 색</div>${sw("colors")}</div>
+      <div><div class="sub">피하고 싶은 색 <span class="muted" style="font-weight:400">(추천에서 빠져요)</span></div>${sw("avoidColors",true)}</div>
+    </div>
+    <div class="panel fs"><h3>상황 · 예산</h3>
+      ${multi("occ",OCCS,"주로 입는 상황")}
+      ${one("season",SEASONS.map(v=>[v]),"시즌")}
+      <div><div class="sub">예산 스타일</div><div class="chips"><button class="chip" data-act="budgetPreset" data-v="0.6">가성비</button><button class="chip" data-act="budgetPreset" data-v="1">중간</button><button class="chip" data-act="budgetPreset" data-v="1.8">프리미엄</button></div></div>
+      <div><div class="sub">종류별 최대 예산 (원)</div><div class="fields">${cats.map(c=>`<label class="field" for="b-${c}">${CATNAME[c]}<input id="b-${c}" type="number" inputmode="numeric" min="0" step="5000" value="${p.budget[c]||p.bmax}" data-bk="${c}"></label>`).join("")}
+        <label class="field" for="p-bmin">최소 예산<input id="p-bmin" type="number" inputmode="numeric" min="0" step="5000" value="${p.bmin}" data-k="bmin"></label></div></div>
+    </div>
+    <div class="panel fs"><h3>추천 기준 중요도 <small>내가 중요하게 여기는 기준에 더 큰 비중을 둬요</small></h3>
+      ${Object.keys(W).map(k=>`<div class="rng"><label for="w-${k}">${PARTNAME[k]}</label><input type="range" id="w-${k}" data-wk="${k}" min="0" max="50" step="5" value="${p.w[k]}"><output id="wo-${k}">${Math.round(Wof(p)[k]*100)}%</output></div>`).join("")}
+      <div><button class="btn sm" data-act="wReset">기본값(기획서 비율)으로</button></div>
+    </div>
+    <div class="panel fs"><h3>내 옷장 <small>가진 옷과 어울리는 아이템을 우선 추천해요</small></h3>
+      <div class="closet">${(S.closet[g]||[]).map((o,i)=>`<span class="tag"><span class="dot" style="background:${COLORS[o.color].h}"></span>${COLORS[o.color].n} ${CATNAME[o.cat]}<button data-rmcl="${i}" aria-label="삭제">✕</button></span>`).join("") || `<span class="muted small">아직 등록한 옷이 없어요.</span>`}</div>
+      <div class="chips"><select id="clCat" class="input" style="width:auto">${Object.entries(CATNAME).filter(([k])=>k!=="bag"&&(g==="F"||k!=="dress")).map(([k,n])=>`<option value="${k}">${n}</option>`).join("")}</select>
+        <select id="clColor" class="input" style="width:auto">${Object.entries(COLORS).map(([k,c])=>`<option value="${k}">${c.n}</option>`).join("")}</select>
+        <button class="btn" id="clAdd">옷장에 추가</button></div>
+    </div>
+    <div class="panel fs"><h3>쇼핑몰 <small>검색 연결할 곳 · ${SITES.length}곳 중 ${S.sites.length}곳 사용</small></h3>
+      ${SITE_GROUPS.map(gr=>`<div class="sg"><span>${gr}</span><div class="chips">${SITES.filter(s=>s.grp===gr).map(s=>`<button class="chip" data-site="${s.id}" aria-pressed="${S.sites.includes(s.id)}">${s.n}${s.g?` <small>${s.g==="F"?"여성":"남성"}</small>`:""}</button>`).join("")}</div></div>`).join("")}
+      <div class="chips"><button class="btn sm" data-act="sitesAll">모두 켜기</button><button class="btn sm" data-act="sitesNone">모두 끄기</button></div>
+    </div>
+    <div class="panel confirm" id="resetBox"><span class="small muted">저장된 체형·취향·찜 정보를 모두 지울 수 있어요.</span><button class="btn sm" id="reset1">내 정보 모두 지우기</button></div>
+   </div>
+   <aside class="side"><div class="panel fs" style="gap:10px"><div class="head" style="align-items:center"><div class="eyebrow">3D Preview</div>
+       <div class="chips"><button class="chip" data-act="pvDress" data-v="1" aria-pressed="${!!S.previewDress}">추천 코디</button><button class="chip" data-act="pvDress" data-v="0" aria-pressed="${!S.previewDress}">바디만</button></div></div>
+     <div id="pv">${figHTML("live", pvLook(), {}, {cls:"live",ruler:true})}</div>
+     <p class="note" style="margin:0">${S.previewDress?`"${p.occ[0]||"일상"}" 상황 1순위 코디를 추천 사이즈로 입혔어요.`:"체형 확인용 바디 피규어예요."} 화면을 드래그하면 돌려볼 수 있어요.</p></div>
+     <button class="btn pri big" data-go="recs">이 설정으로 추천 보기</button></aside>
+  </div></section>`;
+}
+function pvLook(){ const g=S.g, p=P(); if (!S.previewDress) return {}; const o=outfits(g, p.occ[0]||"일상", 1)[0]; return o ? o.look : {}; }
+let pvRaf=0;
+function refreshPreview(){ cancelAnimationFrame(pvRaf); pvRaf=requestAnimationFrame(()=>{ const pv=$("#pv"); if (!pv) return;
+  if (!(Fig3D.ok && Fig3D.update({p:P(), look:pvLook(), sizes:{}}))) { pv.innerHTML = figHTML("live", pvLook(), {}, {cls:"live",ruler:true}); flushFigs(); } }); }
+function bindStyle(){
+  const p=P();
+  document.querySelectorAll("#main [data-k]").forEach(el => el.addEventListener("input", () => {
+    const k=el.dataset.k; p[k] = el.tagName==="SELECT" ? el.value : (parseFloat(el.value)||p[k]); save();
+    const v=$("#v-"+k); if (v) v.textContent=p[k];
+    refreshPreview();
+  }));
+  document.querySelectorAll("#main [data-bk]").forEach(el => el.addEventListener("input", () => { p.budget[el.dataset.bk] = parseFloat(el.value)||0; save(); }));
+  document.querySelectorAll("#main [data-wk]").forEach(el => el.addEventListener("input", () => { p.w[el.dataset.wk] = +el.value; save();
+    const Wp=Wof(p); for (const k of Object.keys(W)){ const o=$("#wo-"+k); if (o) o.textContent=Math.round(Wp[k]*100)+"%"; } }));
+}
+function estimateBody(){ const g=S.g, p=P(), h=p.height, b=p.weight/((h/100)**2), r=v=>Math.round(v*2)/2;
+  if (g==="F"){ const d=b-20.5; Object.assign(p,{chest:r(84+d*2.2),underbust:r(70+d*2),waist:r(66+d*2.6),hip:r(91+d*2),thigh:r(52+d*1.5),calf:r(34+d*.6),arm:r(26+d*.9),shoulder:r(37*Math.sqrt(h/163)),inseam:r(h*.454),armLen:r(h*.333)}); }
+  else { const d=b-22.8; Object.assign(p,{chest:r(96+d*2.3),waist:r(80+d*3),hip:r(96+d*1.9),thigh:r(56+d*1.5),calf:r(37+d*.6),arm:r(30+d*.9),shoulder:r(45*Math.sqrt(h/175)),inseam:r(h*.457),armLen:r(h*.343)}); }
+}
+
+function wearPanel(){
+  const g=S.g, p=P(); ensureLook(g); const look=curLook(g), f=S.fit[g];
+  const total=Object.values(look).reduce((a,b)=>a+b.price,0);
+  return `<div class="panel wp"><div class="head" style="align-items:center"><div class="eyebrow">내 아바타 · 입어보는 중</div><span class="small muted">${p.height}cm</span></div>
+    ${figHTML("live",look,f.size,{cls:"live"})}
+    <div class="fs" style="gap:6px">${["outer","top","bottom","dress","shoes","bag"].filter(c=>look[c]).map(c=>{const it=look[c], rs=recSize(it,p), cur=f.size[it.id]!=null?f.size[it.id]:(rs&&rs.idx); const rg=rs&&rs.idx!==null?regions(it,cur,p):[]; const bad=rg.some(r=>r.lv==="bad");
+      return `<div class="wi"><button class="lnk" data-act="detail" data-id="${it.id}">${CATNAME[c]} · ${it.name}</button><span class="tag ${bad?"bad":"ok"}">${rs?(rs.idx===null?rs.name:SZ[g].names[cur]):"FREE"}${rg[1]?` ${rg[1].k} ${rg[1].t}`:rg[0]?` ${rg[0].k} ${rg[0].t}`:""}</span></div>`;}).join("")}</div>
+    <div class="total"><span>착장 합계</span><b>${won(total)}</b></div>
+    <div class="chips"><button class="btn sm pri" data-go="fit">피팅룸에서 사이즈 맞추기</button><button class="btn sm" data-act="shopFit">착장 찾기</button></div>
+    <p class="note" style="margin:0">카드의 "입혀보기"를 누르면 이 아바타에 바로 입혀져요.</p></div>`;
+}
+function vRecs(){
+  const g=S.g, p=P();
+  const sortFn = S.recSort==="low" ? (a,b)=>a.it.price-b.it.price : S.recSort==="high" ? (a,b)=>b.it.price-a.it.price : null;
+  const all = ranked(g);
+  const cats = ["top","bottom",...(g==="F"?["dress"]:[]),"outer","shoes","bag"];
+  const hidden = S.hides.filter(id=>BYID[id].g===g).length;
+  const sec = c => { let l = all.filter(x=>x.it.cat===c); if (sortFn) l=[...l].sort(sortFn); const open=S.recOpen[c]; const n = open ? l.length : (S.top3?3:6);
+    return `<div class="catsec" id="sec-${c}"><div class="head" style="align-items:center"><div><h3>${CATNAME[c]} 추천</h3><span class="small muted">${l.length}개 중 ${Math.min(n,l.length)}개 · 1위 매칭 ${l[0]?l[0].sc.total:0}%</span></div>
+      ${l.length>n||open?`<button class="btn sm" data-more="${c}">${open?"접기":`${l.length-n}개 더 보기`}</button>`:""}</div>
+      <div class="grid">${l.slice(0,n).map((x,i)=>card(x, !sortFn && i<3 ? ["1st","2nd","3rd"][i] : null)).join("") || `<p class="muted">조건에 맞는 아이템이 없어요.</p>`}</div></div>`; };
+  return `<section class="tab">
+  <div class="head"><div><div class="eyebrow">For ${g==="F"?"her":"him"}</div><h2>옷 종류별 맞춤 추천</h2><p class="muted">취향 30 · 보유 옷 조화 20 · 예산 15 · 체형·핏 15 · 상황·계절 10 · 색상 10 기준. 카드를 누르면 소재·실측·구매처를 볼 수 있어요.</p></div>
+    <button class="btn" data-act="top3" aria-pressed="${S.top3}">${S.top3?"선택장애 모드 · 종류별 TOP 3":"종류별 6개씩 보기"}</button></div>
+  <div class="recLay">
+   <div class="fs" style="gap:22px;min-width:0">
+    <div class="toolbar">
+      <div class="chips">${cats.map(c=>`<button class="chip" data-jump="${c}">${CATNAME[c]}</button>`).join("")}</div>
+      <div class="chips"><button class="chip" data-sort="score" aria-pressed="${S.recSort==="score"}">추천순</button><button class="chip" data-sort="low" aria-pressed="${S.recSort==="low"}">낮은 가격</button><button class="chip" data-sort="high" aria-pressed="${S.recSort==="high"}">높은 가격</button></div>
+    </div>
+    ${cats.map(sec).join("")}
+    <div class="panel fs">
+      <h3>찾는 옷이 따로 있나요?</h3>
+      <div class="search"><input id="q" class="input" placeholder="예: 트위드 자켓, 하객룩 원피스, 와이드 슬랙스" value="${esc(S.q||"")}"><button class="btn pri" data-act="q">내 취향으로 찾기</button></div>
+      <div id="qOut" class="fs">${S.q?qBlock():`<p class="note" style="margin:0">입력한 옷에 성별·선호 색상·핏을 붙여 ${activeSites().length}개 쇼핑몰의 검색 결과로 연결해 드려요.</p>`}</div>
+    </div>
+    ${hidden?`<p class="note">관심 없어요로 숨긴 아이템 ${hidden}개 · <button class="btn sm" data-act="unhide">다시 보기</button></p>`:""}
+    <p class="note">MVP 단계라 위 상품은 추천 로직을 보여주는 예시 데이터예요. 실제 상품은 "상세·구매처"에서 각 쇼핑몰의 검색 결과로 확인하고, 정식 버전에서는 제휴·허가된 상품 데이터로 바뀝니다.</p>
+   </div>
+   <aside class="side">${wearPanel()}</aside>
+  </div>
+  </section>`;
+}
+function qBlock(){
+  const p=P(), g=S.g, base=(S.q||"").trim(); if(!base) return "";
+  const gw = g==="F"?"여성":"남성", fitw = p.fit==="over"?" 오버핏":p.fit==="slim"?" 슬림핏":"";
+  const variants = [`${gw} ${base}`, ...p.colors.slice(0,3).map(c=>`${gw} ${COLORS[c].n} ${base}${fitw}`)];
+  return variants.map((kw,i)=>`<div class="kw fs" style="gap:6px"><span class="small"><b>${esc(kw)}</b>${i===0?" · 기본":" · 내 선호 색상·핏"}</span><div class="sites">${siteLinks(kw)}</div></div>`).join("");
+}
+
+/* --- 상황별 코디 --- */
+function vCoordi(){
+  const g=S.g, p=P(), occ=S.coordOcc, list=outfits(g,occ,4);
+  return `<section class="tab">
+  <div class="head"><div><div class="eyebrow">Look book</div><h2>상황별 코디</h2><p class="muted">${p.season} 시즌 · 예산 아이템당 ${won(p.bmax)} 이하 우선 · 색 조합까지 계산했어요.</p></div></div>
+  <div class="chips">${OCCS.map(x=>`<button class="chip" data-cocc="${x}" aria-pressed="${occ===x}">${x}</button>`).join("")}</div>
+  <div class="looks">${list.map((o,i)=>`<article class="look">
+    <div>${figHTML("snap",o.look,{},{cls:"look",w:320,h:470,theta:.3})}</div>
+    <div class="fs" style="gap:8px;min-width:0">
+      <div class="head" style="align-items:center"><h3>${occ}룩 ${String.fromCharCode(65+i)}</h3>${i===0?`<span class="sticker">OTJAL Pick</span>`:`<span class="tag">매칭 ${o.score}%</span>`}</div>
+      ${o.items.map(it=>{const z=recSize(it,p);return `<div class="lookItem"><span class="th">${thumb(it)}</span><span style="min-width:0"><b>${it.name}</b><span class="muted">${won(it.price)}${z?` · ${z.name}`:""}</span></span></div>`}).join("")}
+      <div class="total"><span>합계</span><b>${won(o.total)}</b></div>
+      <div class="chips"><button class="btn sm pri" data-act="shopLook" data-li="${i}" data-o="${occ}">한번에 찾기</button><button class="btn sm" data-act="tryLook" data-li="${i}" data-o="${occ}">피팅룸</button></div>
+    </div></article>`).join("") || `<p class="muted">이 상황에 맞는 아이템이 부족해요. 스타일 설정을 넓혀 보세요.</p>`}</div>
+  </section>`;
+}
+
+/* --- 피팅룸 --- */
+function vFit(){
+  const g=S.g, p=P(), f=S.fit[g]; ensureLook(g); const look=curLook(g);
+  const slots = ["outer","top","bottom",...(g==="F"?["dress"]:[]),"shoes","bag"];
+  const slot = c => {
+    const it = look[c], opts = ITEMS[g].filter(x=>x.cat===c);
+    const rs = it ? recSize(it,p) : null, cur = it ? (f.size[it.id]!=null ? f.size[it.id] : rs && rs.idx) : null;
+    return `<div class="slot"><span class="th">${it?thumb(it):`<span class="muted small">${CATNAME[c]}</span>`}</span>
+      <div class="fs" style="gap:6px;min-width:0">
+        <div class="row"><b class="small">${CATNAME[c]}</b><select data-slot="${c}" aria-label="${CATNAME[c]} 선택"><option value="">${c==="dress"?"원피스 안 입기":"선택 안 함"}</option>${opts.map(x=>`<option value="${x.id}" ${it&&it.id===x.id?"selected":""}>${x.name} · ${won(x.price)}</option>`).join("")}</select></div>
+        ${it && rs && rs.idx!==null ? `<div class="row"><div class="sizes">${SZ[g].names.map((n,i)=>`<button data-size="${it.id}" data-i="${i}" aria-pressed="${cur===i}" class="${rs.idx===i?"rec":""}">${n}</button>`).join("")}</div>
+          <span class="small muted">추천 ${rs.name}${rs.ok?"":" (맞는 사이즈 없음)"}</span></div>
+          <div class="row">${regions(it,cur,p).map(r=>`<span class="tag ${r.lv}">${r.k} ${r.t}</span>`).join("")}</div>` : it && rs ? `<span class="small muted">내 발 사이즈 ${rs.name} 기준</span>` : ""}
+      </div></div>`;
+  };
+  const total = Object.values(look).reduce((a,b)=>a+b.price,0);
+  return `<section class="tab">
+  <div class="head"><div><div class="eyebrow">Virtual fitting room</div><h2>피팅룸</h2><p class="muted">내 체형 수치로 만든 아바타에 사이즈별로 입혀 봐요. 사이즈 버튼을 바꾸면 옷 품이 실제 치수 비율대로 달라져요.</p></div>
+    <div class="chips"><button class="btn" data-go="style">체형 수정</button><button class="btn" data-act="autoSize">추천 사이즈로 자동 맞춤</button><button class="btn pri" data-act="shopFit">이 착장 쇼핑몰에서 찾기</button></div></div>
+  <div class="fit">
+    <div class="fitStage">${figHTML("live",look,f.size,{cls:"live",ruler:true})}
+      <div class="total"><span>착장 합계</span><b>${won(total)}</b></div>
+      <p class="note">가상 피팅은 판매처 사이즈표와 입력한 체형을 비교한 참고용 시뮬레이션이에요. 실제 착용감은 소재·브랜드별 실측에 따라 다를 수 있으니 구매 전 상세 실측을 꼭 확인해 주세요.</p></div>
+    <div class="slots">
+<div class="panel fs" style="gap:10px"><h3 style="font-size:16px">추천 아이템 바로 입혀보기 <small class="muted" style="font-family:var(--f-body);font-weight:500">내 체형 기준 추천 사이즈로 입혀져요</small></h3>
+    <div class="quick">${["outer","top","bottom",...(g==="F"?["dress"]:[]),"shoes"].map(c=>`<div class="qrow"><span class="small muted">${CATNAME[c]}</span><div class="qitems">${ranked(g).filter(x=>x.it.cat===c).slice(0,5).map(x=>`<button class="qi" data-act="wear" data-id="${x.it.id}" aria-pressed="${f[c]===x.it.id}" title="${x.it.name} · 매칭 ${x.sc.total}%">${thumb(x.it)}<span>${x.sc.total}%</span></button>`).join("")}</div></div>`).join("")}</div></div>
+${slots.map(slot).join("")}
+      <div class="panel small"><b>핏 표시 읽는 법</b><div class="chips" style="margin-top:6px"><span class="tag ok">정핏·슬림</span><span class="tag loose">여유·오버·드롭</span><span class="tag bad">타이트·조임·좁음</span></div></div>
+    </div>
+  </div></section>`;
+}
+
+/* --- 찜 --- */
+function vWish(){
+  const g=S.g, p=P(), list=S.wish.map(id=>BYID[id]).filter(it=>it&&it.g===g);
+  const total=list.reduce((a,b)=>a+b.price,0);
+  return `<section class="tab">
+  <div class="head"><div><div class="eyebrow">Wishlist</div><h2>찜한 아이템</h2><p class="muted">${list.length}개 · 합계 ${won(total)} · 예산 기준 아이템당 ${won(p.bmax)}</p></div>
+  ${list.length?`<button class="btn pri" data-act="shopWish">찜 전체 쇼핑몰에서 찾기</button>`:""}</div>
+  <div class="wl">${list.map(it=>{const sc=score(it,p), z=sc.size; return `<div class="wrow"><span class="th">${thumb(it)}</span>
+    <div style="min-width:0"><b>${it.name}</b><div class="small muted">${won(it.price)} · 매칭 ${sc.total}%${z?` · ${z.idx===null?"":"추천 "}${z.name}`:""}</div></div>
+    <div class="chips"><button class="btn sm" data-act="try" data-id="${it.id}">입어보기</button><button class="btn sm" data-act="shop" data-id="${it.id}">찾기</button><button class="btn sm" data-act="wish" data-id="${it.id}" aria-pressed="true">삭제</button></div></div>`}).join("") ||
+    `<div class="panel"><p style="margin:0">아직 찜한 아이템이 없어요. 맞춤 추천에서 ♡를 눌러 모아 보세요.</p><div style="margin-top:10px"><button class="btn pri" data-go="recs">추천 보러 가기</button></div></div>`}</div>
+  </section>`;
+}
+
+/* --- 브랜드 (로고·슬로건) --- */
+function vBrand(){
+  const icon = (c1, c2, fg) => `<svg viewBox="0 0 100 100"><defs><linearGradient id="ic${c1.slice(1)}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs><rect x="2" y="2" width="96" height="96" rx="28" fill="url(#ic${c1.slice(1)})"/><path d="M37 31 L47 41 L65 20" fill="none" stroke="${fg}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M47 41 L47 46 L18 68 Q14 72 20 74 L80 74 Q86 72 82 68 L53 46" fill="none" stroke="${fg}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `<section class="tab">
+  <div class="head"><div><div class="eyebrow">Brand kit · v${APP_VERSION}</div><h2>OTJAL 브랜드</h2><p class="muted">OTJAL은 "옷 잘 입는 사람"에서 온 이름이에요. 옷걸이 고리를 체크 표시로 바꿔 "나에게 맞는 옷을 골랐다"는 뜻을 담았어요.</p></div></div>
+  <div class="bgrid">
+    <div class="panel fs"><div class="eyebrow">Primary logo</div>
+      <div class="logoBig"><svg viewBox="0 0 100 100"><use href="#logoMark"/></svg><span class="wm"><b>OTJAL</b><span class="ver">v${APP_VERSION}</span></span></div>
+      <p class="note" style="margin:0">로고 색은 성별 모드에 따라 바뀌어요(여성 로즈 · 남성 애저). 워드마크는 Cormorant Garamond, 본문은 Noto Sans KR을 써요.</p>
+    </div>
+    <div class="panel fs"><div class="eyebrow">App icon</div>
+      <div class="icons"><div>${icon("#F49AB2","#DC4E76","#fff")}여성 기본</div><div>${icon("#8EA6F5","#3F60D2","#fff")}남성 기본</div><div>${icon("#FFFFFF","#F6ECE8","#DC4E76")}화이트</div><div>${icon("#3A3840","#1E1D22","#F2C8D3")}다크</div></div>
+    </div>
+  </div>
+  <div class="panel fs"><div class="eyebrow">Main slogan</div><p class="slogan" style="margin:0">나에게 잘 맞는 옷,<br>OTJAL이 찾아준다.</p></div>
+  <div class="panel fs"><div class="eyebrow">Campaign lines · 20–30s</div>
+    <ul class="slist">
+      <li><span>앱스토어</span><b>오늘 뭐 입지? 3초면 끝.</b></li>
+      <li><span>SNS 광고</span><b>장바구니 앞 선택장애, OTJAL이 끝내줄게.</b></li>
+      <li><span>3D 피팅</span><b>내 몸 그대로, 먼저 입어보고 사세요.</b></li>
+      <li><span>감성 카피</span><b>고민은 OTJAL이, 설렘은 나에게.</b></li>
+      <li><span>커뮤니티</span><b>오늘부터 나도 #옷잘러</b></li>
+      <li><span>English</span><b>Pick less. Wear well.</b></li>
+    </ul></div>
+  <div class="panel fs"><div class="eyebrow">Color</div>
+    <div class="pal">
+      <div><i style="background:#E0577D"></i><p>Rose<br>#E0577D</p></div><div><i style="background:#4467D8"></i><p>Azure<br>#4467D8</p></div>
+      <div><i style="background:#C9A27C"></i><p>Champagne<br>#C9A27C</p></div><div><i style="background:#FBF6F4"></i><p>Blush mist<br>#FBF6F4</p></div>
+      <div><i style="background:#27262B"></i><p>Ink<br>#27262B</p></div>
+    </div></div>
+  <div class="panel small muted">Creator · <b style="color:var(--ink)">${CREATOR}</b> · OTJAL 서비스 기획·디자인·개발 · <a href="${REPO_URL}" target="_blank" rel="noopener">GitHub</a></div>
+  </section>`;
+}
+
+/* ---------- 이벤트 ---------- */
+document.addEventListener("click", e => {
+  const b = e.target.closest("button, a[data-go]"); if (!b) return;
+  const d = b.dataset, g = S.g, p = P();
+  if (d.go){ e.preventDefault(); go(d.go); return; }
+  if (d.g){ S.g = d.g; save(); render(); return; }
+  if (d.occ){ S.pick = {occ:d.occ, i:0}; save(); render(); return; }
+  if (d.cocc){ S.coordOcc = d.cocc; save(); render(); return; }
+  if (d.cat){ S.recCat = d.cat; save(); render(); return; }
+  if (d.sort){ S.recSort = d.sort; save(); render(); return; }
+  if (d.site){ S.sites = S.sites.includes(d.site) ? S.sites.filter(x=>x!==d.site) : [...S.sites, d.site]; save(); b.setAttribute("aria-pressed", S.sites.includes(d.site)); return; }
+  if (d.one){ p[d.one] = d.v; save(); render(); return; }
+  if (d.multi){ const a=p[d.multi]||[]; p[d.multi] = a.includes(d.v) ? a.filter(x=>x!==d.v) : [...a, d.v]; save(); b.setAttribute("aria-pressed", p[d.multi].includes(d.v)); if (S.tab==="style") refreshPreview(); return; }
+  if (d.preset!=null){ const t=SZ[g], i=+d.preset; Object.assign(p,{shoulder:t.shoulder[i],chest:mid(t.chest[i]),waist:mid(t.waist[i]),hip:mid(t.hip[i])}); save(); render(); return; }
+  if (d.rmcl!=null){ S.closet[g].splice(+d.rmcl,1); save(); render(); return; }
+  if (b.id==="clAdd"){ (S.closet[g] ||= []).push({cat:$("#clCat").value, color:$("#clColor").value}); save(); render(); return; }
+  if (b.id==="reset1"){ $("#resetBox").innerHTML = `<span class="small"><b>정말 지울까요?</b> 체형·취향·옷장·찜이 모두 기본값으로 돌아가요.</span><button class="btn sm pri" id="reset2">지우기</button><button class="btn sm" id="reset0">취소</button>`; return; }
+  if (b.id==="reset2"){ try{ localStorage.removeItem("otjal-v1"); }catch(_){} S = defaults(); S.tab="style"; save(); render(); return; }
+  if (b.id==="reset0"){ render(); return; }
+  if (d.size){ S.fit[g].size[d.size] = +d.i; save(); render(); return; }
+  if (d.close!==undefined){ $("#shopDlg").close(); return; }
+  if (d.themeSet){ S.theme=d.themeSet; save(); renderTabs(); return; }
+  if (d.dsize){ S.fit[g].size[d.dsize] = +d.i; save(); render(); openDetail(d.dsize); return; }
+  if (d.more){ S.recOpen[d.more] = !S.recOpen[d.more]; save(); render(); return; }
+  if (d.jump){ const el=$("#sec-"+d.jump); if (el) el.scrollIntoView({behavior:"smooth", block:"start"}); return; }
+  const inDlg = !!b.closest("#shopDlg");
+  switch (d.act){
+    case "detail": openDetail(d.id); break;
+    case "logo": { const dl=$("#shopDlg"); if (dl.open) dl.close(); S.tab="home"; S.pick.i=0; save(); render(); window.scrollTo({top:0}); break; }
+    case "qr": openQR(); break;
+    case "refer": openRefer(); break;
+    case "copyRefer": copyText(referText(), $("#referNote")); break;
+    case "share": { const t=referText(); try { if (window.OTJALApp && OTJALApp.share){ OTJALApp.share(t); break; } } catch(e){}
+      if (navigator.share) navigator.share({title:"OTJAL", text:t}).catch(()=>copyText(t,$("#referNote"))); else copyText(t,$("#referNote")); break; }
+    case "estimate": estimateBody(); save(); render(); break;
+    case "budgetPreset": { const f=+d.v, base=g==="F"?{top:60000,bottom:60000,dress:80000,outer:160000,shoes:80000,bag:70000}:{top:60000,bottom:70000,dress:80000,outer:180000,shoes:100000,bag:90000};
+      for (const k in base) p.budget[k]=Math.round(base[k]*f/5000)*5000; save(); render(); break; }
+    case "wReset": p.w={style:30,closet:20,budget:15,fit:15,occ:10,color:10}; save(); render(); break;
+    case "wear": { const it=BYID[d.id]; wear(it); save(); render(); if (inDlg) openDetail(d.id); break; }
+    case "pvDress": S.previewDress = d.v==="1"; save(); render(); break;
+    case "autoSize": S.fit[g].size = {}; save(); render(); break;
+    case "sitesAll": S.sites = SITES.map(s=>s.id); save(); render(); break;
+    case "sitesNone": S.sites = []; save(); render(); break;
+    case "repick": S.pick.i++; save(); render(); const st=$("#stage"); if(st){ st.classList.remove("pop"); void st.offsetWidth; st.classList.add("pop"); } break;
+    case "wish": S.wish = S.wish.includes(d.id) ? S.wish.filter(x=>x!==d.id) : [...S.wish, d.id]; save(); render(); if (inDlg) openDetail(d.id); break;
+    case "like": for (const s of BYID[d.id].styles) S.likes[g+s]=(S.likes[g+s]||0)+1; save(); b.textContent="반영했어요"; b.disabled=true; break;
+    case "hide": S.hides.push(d.id); save(); render(); break;
+    case "unhide": S.hides = S.hides.filter(id=>BYID[id].g!==g); save(); render(); break;
+    case "top3": S.top3 = !S.top3; save(); render(); break;
+    case "q": S.q = $("#q").value; save(); $("#qOut").innerHTML = qBlock() || `<p class="note" style="margin:0">찾는 옷을 입력해 주세요.</p>`; break;
+    case "shop": { const it=BYID[d.id]; openShop([{label:it.name, kw:kwFor(it)}], it.name); break; }
+    case "try": { wear(BYID[d.id]); save(); if (inDlg) $("#shopDlg").close(); go("fit"); break; }
+    case "shopLook": { const o=outfits(g,d.o,5)[+d.li]; if(o) openShop(o.items.map(it=>({label:`${CATNAME[it.cat]} · ${it.name}`, kw:kwFor(it)})), `${d.o}룩 한번에 찾기`); break; }
+    case "tryLook": { const o=outfits(g,d.o,5)[+d.li]; if(o){ const f=S.fit[g]; for (const c of ["top","bottom","dress","outer","shoes","bag"]) f[c] = o.look[c] ? o.look[c].id : ""; save(); go("fit"); } break; }
+    case "shopFit": { const l=Object.values(curLook()); if(l.length) openShop(l.map(it=>({label:`${CATNAME[it.cat]} · ${it.name}`, kw:kwFor(it)})), "피팅룸 착장 찾기"); break; }
+    case "shopWish": { const l=S.wish.map(id=>BYID[id]).filter(it=>it.g===g); openShop(l.map(it=>({label:it.name, kw:kwFor(it)})), "찜 목록 찾기"); break; }
+  }
+});
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el.dataset.slot!==undefined){ const f=S.fit[S.g], c=el.dataset.slot; f[c]=el.value;
+    if (c==="dress" && el.value){ f.top=""; f.bottom=""; } if ((c==="top"||c==="bottom") && el.value) f.dress=""; save(); render(); }
+});
+document.addEventListener("keydown", e => { if (e.target.id==="q" && e.key==="Enter"){ e.preventDefault(); S.q=e.target.value; save(); $("#qOut").innerHTML = qBlock(); } });
+$("#shopDlg").addEventListener("click", e => { if (e.target.id==="shopDlg") e.target.close(); });
+
+const H = (location.hash||"").slice(1); if (TABS.some(t=>t[0]===H)) S.tab = H;
+render();
+</script>

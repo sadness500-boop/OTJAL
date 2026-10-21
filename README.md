@@ -5,7 +5,7 @@ AI 개인 맞춤형 의류 추천·실사 모델 가상 피팅·쇼핑 연결 �
 
 ## 🌐 웹 버전 (크롬·엣지·사파리)
 
-- **https://sadness500-boop.github.io/OTJAL/** — GitHub Pages (저장소 Settings → Pages에서 `main` 브랜치 `/docs` 폴더로 한 번 켜면 열려요)
+- **https://sadness500-boop.github.io/OTJAL/** — GitHub Pages (자동으로 웹앱 `docs/`로 이동)
 - 크롬·엣지에서 주소창의 설치 아이콘을 누르면 PC·휴대폰에 앱처럼 설치돼요(PWA). 한 번 열면 오프라인에서도 동작합니다.
 - 웹 파일: [`docs/`](docs/) · 빌드: `python3 tools/build-web.py`
 

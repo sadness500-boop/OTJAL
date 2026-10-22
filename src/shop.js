@@ -1,5 +1,5 @@
 /* ---------- 실제 판매 상품 추천 엔진 (네이버 쇼핑 데이터 기반) — OTJAL · Rat Rae Choi ----------
-   사용자는 설정할 것이 없습니다: 개발 단계에서 GitHub Actions가 6시간마다 네이버 쇼핑 검색 API로 실제 상품을 모아 카탈로그(JSON)로 올리고,
+   사용자는 설정할 것이 없습니다: 개발 단계에서 GitHub Actions가 6시간마다 실제 상품(쿠팡 파트너스 Open API + 운영자 추천 목록)을 모아 카탈로그(JSON)로 올리고,
    앱은 그 카탈로그를 받아 기기 안에서 "내 스타일" 점수로 1~50위를 매깁니다.
    네이버 쇼핑은 네이버 스마트스토어·11번가·G마켓·옥션·SSG·롯데ON·무신사·29CM·W컨셉·LF몰 등 여러 쇼핑몰 상품을 함께 검색해 줍니다.
    내 스타일(체형·스타일·색상·상황·예산·중요도·쇼핑몰)로 검색어를 만들고, 받아온 실제 상품을 OTJAL 점수로 다시 매겨 1~50위로 보여줍니다. */
@@ -94,7 +94,8 @@ const Shop = (() => {
   async function loadCatalog(g){ if (MEM[g] && Date.now()-MEM[g].t < 30*60*1000) return MEM[g];
     const r = await fetch(CAT_URL+g+".json", {cache:"no-cache"}); if (!r.ok) throw new Error("catalog "+r.status);
     const j = await r.json(), out=[];
-    (j.items||[]).forEach(x=>{ const it=toItem({productId:x.id,title:x.t,image:x.img,link:x.l,lprice:x.p,mallName:x.m,brand:x.b,category1:"패션의류",category2:x.c2,category3:x.c3,category4:x.c4}, g, x.q, x.r); if (it) out.push(it); });
+    (j.items||[]).forEach(x=>{ const it=toItem({productId:x.id,title:x.t,image:x.img,link:x.l,lprice:x.p,mallName:x.m,brand:x.b,category1:"패션의류",category2:x.c2,category3:x.c3,category4:x.c4}, g, x.q, x.r); if (it){ it.id=x.id.startsWith("C")?x.id:it.id; it.src=x.s||"naver"; out.push(it); } });
+    if (!out.length) throw new Error("catalog empty");
     catState="ok"; return MEM[g]={t:Date.now(), updated:j.updated, items:out}; }
   async function fromCatalog(g){ prog={g,done:0,total:1,err:""}; emit(); const c=await loadCatalog(g); prog.done=1; emit(); return {items:c.items, updated:c.updated}; }
 
@@ -122,13 +123,17 @@ const Shop = (() => {
       const items=[...byT.values()]; const p=S.profile[g];
       items.forEach(it=>{ it.pre=score(it,p).total; }); items.sort((a,b)=>b.pre-a.pre);
       C[g]={sig:sigOf(g), at:Date.now(), nq:prog.total, src, updated, total:items.length, items:items.slice(0, src==="catalog"?600:360)}; persist(); apply(g); return C[g]; }
-  const stale = g => !has(g) || C[g].sig!==sigOf(g) || Date.now()-C[g].at>(C[g].src==="catalog"?3*3600*1000:TTL);
+  const stale = g => !has(g) || C[g].sig!==sigOf(g) || Date.now()-C[g].at>(C[g].src==="catalog"?3600*1000:TTL);
   function auto(g){ if (configured() && stale(g) && !busy) refresh(g).then(()=>{ if (typeof render==="function") render(); }).catch(()=>{ if (typeof render==="function") render(); }); }
 
   /* ---- 앱 카탈로그에 적용 ---- */
   function apply(g){ if (!has(g)) { ITEMS[g]=EXAMPLE[g]; return false; }
-    ITEMS[g]=C[g].items.filter(allowed); for (const it of C[g].items) BYID[it.id]=it; return true; }
-  function rankTop(g, n=50, cat){ const p=S.profile[g]; let R=ranked(g).filter(x=>!cat||x.it.cat===cat);
+    const real=C[g].items.filter(allowed); for (const it of C[g].items) BYID[it.id]=it;
+    // 실제 상품이 3개 미만인 종류는 코디가 끊기지 않게 예시 상품으로 채움(예시 표시 유지)
+    const cnt={}; real.forEach(it=>cnt[it.cat]=(cnt[it.cat]||0)+1);
+    ITEMS[g]=real.concat(EXAMPLE[g].filter(it=>(cnt[it.cat]||0)<3)); return true; }
+  const sources = g => { const o={}; if (C[g]) for (const it of C[g].items) o[it.src||"naver"]=(o[it.src||"naver"]||0)+1; return o; };
+  function rankTop(g, n=50, cat){ const p=S.profile[g]; let R=ranked(g).filter(x=>x.it.real && (!cat||x.it.cat===cat));
     R=R.map(x=>({...x, adj:x.sc.total + Math.max(0,3-(x.it.qrank||0)/20)})); R.sort((a,b)=>b.adj-a.adj);
     if (cat) return R.slice(0,n);
     // 종류·판매처가 한쪽으로 몰리지 않도록 같은 종류가 이어질수록 점수를 조금씩 낮춰 고름
@@ -142,19 +147,19 @@ const Shop = (() => {
     const words=it.kw.split(" ").filter(w=>w && !/여성|남성|\/|\d/.test(w) && !isCol(w));
     const q=it.real ? `${gw} ${words.slice(-3).join(" ")}` : `${gw} ${COLORS[it.color].n.replace("소프트","")} ${it.kw}`;
     const p=S.profile[g];
-    if (!keys()){ const c=await loadCatalog(g), tok=words.concat(it.kw.split(" ")).filter(w=>w.length>1);
+    if (!keys()){ let c; try { c=await loadCatalog(g); } catch(e){ return []; } const tok=words.concat(it.kw.split(" ")).filter(w=>w.length>1);
       return c.items.filter(x=>x.id!==it.id && x.cat===it.cat && (it.real || x.shape===it.shape || true)).filter(allowed)
         .map(x=>{ const ov=tok.reduce((a,w)=>a+(x.kw.includes(w)?1:0),0)+(x.shape===it.shape?1.5:0)+(x.color===it.color?1:0); if (!BYID[x.id]) BYID[x.id]=x; return {it:x, sc:score(x,p), ov}; })
         .sort((a,b)=>(b.ov*6+b.sc.total)-(a.ov*6+a.sc.total)).slice(0,n); }
     const r=await search(q,60);
     return (r.items||[]).map((x,i)=>toItem(x,g,q,i)).filter(x=>x && x.id!==it.id && x.cat===it.cat).filter(allowed).map(x=>{ if (!BYID[x.id]) BYID[x.id]=x; return {it:x, sc:score(x,p)}; }).sort((a,b)=>b.sc.total-a.sc.total).slice(0,n); }
   async function find(text, g, n=20){ const gw=g==="F"?"여성":"남성", q=/여성|남성/.test(text)?text:`${gw} ${text}`; const p=S.profile[g];
-    if (!keys()){ const c=await loadCatalog(g), tok=text.split(/\s+/).filter(w=>w.length>0);
+    if (!keys()){ let c; try { c=await loadCatalog(g); } catch(e){ return []; } const tok=text.split(/\s+/).filter(w=>w.length>0);
       const res=c.items.filter(x=>tok.every(w=>x.full.includes(w)||x.kw.includes(w))).filter(allowed); for (const it of res) BYID[it.id]=it;
       return res.map(x=>({it:x, sc:score(x,p)})).sort((a,b)=>b.sc.total-a.sc.total).slice(0,n); }
     const r=await search(q,100);
     const res=(r.items||[]).map((x,i)=>toItem(x,g,q,i)).filter(Boolean).filter(allowed); for (const it of res) BYID[it.id]=it;
     return res.map(x=>({it:x, sc:score(x,p)})).sort((a,b)=>b.sc.total-a.sc.total).slice(0,n); }
   async function test(){ const r=await search("여성 니트",1); return (r.total||0); }
-  return { configured, live, keys, catalogState:()=>catState, hasBridge, refresh, auto, apply, has, info, rankTop, similar, find, test, stale, on:f=>listeners.add(f), prog:()=>prog, busy:()=>!!busy, siteOfMall };
+  return { sources, configured, live, keys, catalogState:()=>catState, hasBridge, refresh, auto, apply, has, info, rankTop, similar, find, test, stale, on:f=>listeners.add(f), prog:()=>prog, busy:()=>!!busy, siteOfMall };
 })();

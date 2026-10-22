@@ -510,6 +510,7 @@ h1,h2{letter-spacing:-.02em}
 <footer>
   <div class="wrap">
     <div class="fbrand"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#logoMark"/></svg><div><b class="fwm">OT<i>J</i>AL</b><span id="footVer">AI Personal Fashion Stylist &amp; Shopping Assistant</span></div></div>
+    <p class="small muted" id="cpNote" style="margin:0;flex-basis:100%"></p>
     <div class="sig"><span class="by">Designed &amp; Developed by</span><span class="script">Rat Rae Choi</span></div>
   </div>
 </footer>
@@ -521,7 +522,7 @@ h1,h2{letter-spacing:-.02em}
 <script>
 /* ===== OTJAL v0.4.0 — Designed & Developed by Rat Rae Choi ===== */
 const CREATOR = "Rat Rae Choi";
-const APP_NAME = "OTJAL", APP_VERSION = "0.6.1";
+const APP_NAME = "OTJAL", APP_VERSION = "0.6.2";
 const REPO_URL = "https://github.com/sadness500-boop/OTJAL";
 const APK_URL = "https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk";
 const $ = (s, r = document) => r.querySelector(s);
@@ -1625,7 +1626,7 @@ const ART = (() => {
 })();
 
 /* ---------- 실제 판매 상품 추천 엔진 (네이버 쇼핑 데이터 기반) — OTJAL · Rat Rae Choi ----------
-   사용자는 설정할 것이 없습니다: 개발 단계에서 GitHub Actions가 6시간마다 네이버 쇼핑 검색 API로 실제 상품을 모아 카탈로그(JSON)로 올리고,
+   사용자는 설정할 것이 없습니다: 개발 단계에서 GitHub Actions가 6시간마다 실제 상품(쿠팡 파트너스 Open API + 운영자 추천 목록)을 모아 카탈로그(JSON)로 올리고,
    앱은 그 카탈로그를 받아 기기 안에서 "내 스타일" 점수로 1~50위를 매깁니다.
    네이버 쇼핑은 네이버 스마트스토어·11번가·G마켓·옥션·SSG·롯데ON·무신사·29CM·W컨셉·LF몰 등 여러 쇼핑몰 상품을 함께 검색해 줍니다.
    내 스타일(체형·스타일·색상·상황·예산·중요도·쇼핑몰)로 검색어를 만들고, 받아온 실제 상품을 OTJAL 점수로 다시 매겨 1~50위로 보여줍니다. */
@@ -1720,7 +1721,8 @@ const Shop = (() => {
   async function loadCatalog(g){ if (MEM[g] && Date.now()-MEM[g].t < 30*60*1000) return MEM[g];
     const r = await fetch(CAT_URL+g+".json", {cache:"no-cache"}); if (!r.ok) throw new Error("catalog "+r.status);
     const j = await r.json(), out=[];
-    (j.items||[]).forEach(x=>{ const it=toItem({productId:x.id,title:x.t,image:x.img,link:x.l,lprice:x.p,mallName:x.m,brand:x.b,category1:"패션의류",category2:x.c2,category3:x.c3,category4:x.c4}, g, x.q, x.r); if (it) out.push(it); });
+    (j.items||[]).forEach(x=>{ const it=toItem({productId:x.id,title:x.t,image:x.img,link:x.l,lprice:x.p,mallName:x.m,brand:x.b,category1:"패션의류",category2:x.c2,category3:x.c3,category4:x.c4}, g, x.q, x.r); if (it){ it.id=x.id.startsWith("C")?x.id:it.id; it.src=x.s||"naver"; out.push(it); } });
+    if (!out.length) throw new Error("catalog empty");
     catState="ok"; return MEM[g]={t:Date.now(), updated:j.updated, items:out}; }
   async function fromCatalog(g){ prog={g,done:0,total:1,err:""}; emit(); const c=await loadCatalog(g); prog.done=1; emit(); return {items:c.items, updated:c.updated}; }
 
@@ -1748,13 +1750,17 @@ const Shop = (() => {
       const items=[...byT.values()]; const p=S.profile[g];
       items.forEach(it=>{ it.pre=score(it,p).total; }); items.sort((a,b)=>b.pre-a.pre);
       C[g]={sig:sigOf(g), at:Date.now(), nq:prog.total, src, updated, total:items.length, items:items.slice(0, src==="catalog"?600:360)}; persist(); apply(g); return C[g]; }
-  const stale = g => !has(g) || C[g].sig!==sigOf(g) || Date.now()-C[g].at>(C[g].src==="catalog"?3*3600*1000:TTL);
+  const stale = g => !has(g) || C[g].sig!==sigOf(g) || Date.now()-C[g].at>(C[g].src==="catalog"?3600*1000:TTL);
   function auto(g){ if (configured() && stale(g) && !busy) refresh(g).then(()=>{ if (typeof render==="function") render(); }).catch(()=>{ if (typeof render==="function") render(); }); }
 
   /* ---- 앱 카탈로그에 적용 ---- */
   function apply(g){ if (!has(g)) { ITEMS[g]=EXAMPLE[g]; return false; }
-    ITEMS[g]=C[g].items.filter(allowed); for (const it of C[g].items) BYID[it.id]=it; return true; }
-  function rankTop(g, n=50, cat){ const p=S.profile[g]; let R=ranked(g).filter(x=>!cat||x.it.cat===cat);
+    const real=C[g].items.filter(allowed); for (const it of C[g].items) BYID[it.id]=it;
+    // 실제 상품이 3개 미만인 종류는 코디가 끊기지 않게 예시 상품으로 채움(예시 표시 유지)
+    const cnt={}; real.forEach(it=>cnt[it.cat]=(cnt[it.cat]||0)+1);
+    ITEMS[g]=real.concat(EXAMPLE[g].filter(it=>(cnt[it.cat]||0)<3)); return true; }
+  const sources = g => { const o={}; if (C[g]) for (const it of C[g].items) o[it.src||"naver"]=(o[it.src||"naver"]||0)+1; return o; };
+  function rankTop(g, n=50, cat){ const p=S.profile[g]; let R=ranked(g).filter(x=>x.it.real && (!cat||x.it.cat===cat));
     R=R.map(x=>({...x, adj:x.sc.total + Math.max(0,3-(x.it.qrank||0)/20)})); R.sort((a,b)=>b.adj-a.adj);
     if (cat) return R.slice(0,n);
     // 종류·판매처가 한쪽으로 몰리지 않도록 같은 종류가 이어질수록 점수를 조금씩 낮춰 고름
@@ -1768,21 +1774,21 @@ const Shop = (() => {
     const words=it.kw.split(" ").filter(w=>w && !/여성|남성|\/|\d/.test(w) && !isCol(w));
     const q=it.real ? `${gw} ${words.slice(-3).join(" ")}` : `${gw} ${COLORS[it.color].n.replace("소프트","")} ${it.kw}`;
     const p=S.profile[g];
-    if (!keys()){ const c=await loadCatalog(g), tok=words.concat(it.kw.split(" ")).filter(w=>w.length>1);
+    if (!keys()){ let c; try { c=await loadCatalog(g); } catch(e){ return []; } const tok=words.concat(it.kw.split(" ")).filter(w=>w.length>1);
       return c.items.filter(x=>x.id!==it.id && x.cat===it.cat && (it.real || x.shape===it.shape || true)).filter(allowed)
         .map(x=>{ const ov=tok.reduce((a,w)=>a+(x.kw.includes(w)?1:0),0)+(x.shape===it.shape?1.5:0)+(x.color===it.color?1:0); if (!BYID[x.id]) BYID[x.id]=x; return {it:x, sc:score(x,p), ov}; })
         .sort((a,b)=>(b.ov*6+b.sc.total)-(a.ov*6+a.sc.total)).slice(0,n); }
     const r=await search(q,60);
     return (r.items||[]).map((x,i)=>toItem(x,g,q,i)).filter(x=>x && x.id!==it.id && x.cat===it.cat).filter(allowed).map(x=>{ if (!BYID[x.id]) BYID[x.id]=x; return {it:x, sc:score(x,p)}; }).sort((a,b)=>b.sc.total-a.sc.total).slice(0,n); }
   async function find(text, g, n=20){ const gw=g==="F"?"여성":"남성", q=/여성|남성/.test(text)?text:`${gw} ${text}`; const p=S.profile[g];
-    if (!keys()){ const c=await loadCatalog(g), tok=text.split(/\s+/).filter(w=>w.length>0);
+    if (!keys()){ let c; try { c=await loadCatalog(g); } catch(e){ return []; } const tok=text.split(/\s+/).filter(w=>w.length>0);
       const res=c.items.filter(x=>tok.every(w=>x.full.includes(w)||x.kw.includes(w))).filter(allowed); for (const it of res) BYID[it.id]=it;
       return res.map(x=>({it:x, sc:score(x,p)})).sort((a,b)=>b.sc.total-a.sc.total).slice(0,n); }
     const r=await search(q,100);
     const res=(r.items||[]).map((x,i)=>toItem(x,g,q,i)).filter(Boolean).filter(allowed); for (const it of res) BYID[it.id]=it;
     return res.map(x=>({it:x, sc:score(x,p)})).sort((a,b)=>b.sc.total-a.sc.total).slice(0,n); }
   async function test(){ const r=await search("여성 니트",1); return (r.total||0); }
-  return { configured, live, keys, catalogState:()=>catState, hasBridge, refresh, auto, apply, has, info, rankTop, similar, find, test, stale, on:f=>listeners.add(f), prog:()=>prog, busy:()=>!!busy, siteOfMall };
+  return { sources, configured, live, keys, catalogState:()=>catState, hasBridge, refresh, auto, apply, has, info, rankTop, similar, find, test, stale, on:f=>listeners.add(f), prog:()=>prog, busy:()=>!!busy, siteOfMall };
 })();
 
 let FIGQ=[], FIGN=0;
@@ -1806,6 +1812,7 @@ function prodRow(x, rank){ const it=x.it||x, sc=x.sc;
   return `<div class="prow">${rank?`<b class="prk">${rank}</b>`:""}<button class="pth" data-act="detail" data-id="${it.id}">${thumb(it)}</button>
     <div class="pinfo"><div class="pn">${esc(it.name)}</div><div class="pm">${esc(it.mall||"")}${it.brand?` · ${esc(it.brand)}`:""}</div><div class="pp"><b>${won(it.price)}</b>${sc?` <span class="tag" style="color:var(--acc)">매칭 ${sc.total}%</span>`:""}</div></div>
     <div class="pact"><a class="btn sm pri" href="${esc(it.link)}" target="_blank" rel="noopener">구매하기</a><button class="btn sm" data-act="wear" data-id="${it.id}" data-stay="1">입혀보기</button></div></div>`; }
+const CP_NOTE = "이 서비스는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.";
 function connectCTA(msg){ return `<div class="cta fs"><b>${msg||"실제 판매 상품 데이터를 준비하고 있어요"}</b><span class="small muted">따로 설정할 것은 없어요. 데이터가 준비되면 이 자리에 여러 쇼핑몰의 실제 판매 상품이 자동으로 나타나요.</span></div>`; }
 function openShop(items, title){
   $("#shopDlg").classList.remove("wide");
@@ -1913,8 +1920,8 @@ function openDetail(id){
         <div class="chips">${regions(it,cur,p).map(r=>`<span class="tag ${r.lv}">${r.k} ${r.t}</span>`).join("")}</div></div>` : ""}
     </div>
     <div class="detR fs">
-      <div class="pbig">${won(it.price)} <span class="small muted">${it.real?"최저가 · 네이버쇼핑 기준":"예시 가격"}</span></div>
-      ${it.real?`<a class="btn big pri buy" href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.mall||"판매처")}에서 구매하기 →</a>`:""}
+      <div class="pbig">${won(it.price)} <span class="small muted">${it.real?`판매가 · ${esc(it.mall)} 기준 (수시로 바뀔 수 있어요)`:"예시 가격"}</span></div>
+      ${it.real?`<a class="btn big pri buy" href="${esc(it.link)}" target="_blank" rel="noopener">${esc(it.mall||"판매처")}에서 구매하기 →</a>${it.src==="coupang"?`<p class="note" style="margin:0">${CP_NOTE}</p>`:""}`:""}
       <div class="chips"><span class="tag" style="color:var(--acc)">매칭 ${sc.total}%</span>${sc.reasons.map(r=>`<span class="tag">${r}</span>`).join("")}</div>
       <dl class="spec">
         ${it.real?`<dt>판매처</dt><dd>${esc(it.mall)}${it.brand?` · ${esc(it.brand)}`:""}</dd><dt>상품명</dt><dd>${esc(it.full||it.name)}</dd>`:""}
@@ -1953,6 +1960,7 @@ function render(){
   m.innerHTML = ({home:vHome, style:vStyle, recs:vRecs, coordi:vCoordi, fit:vFit, wish:vWish, brand:vBrand})[S.tab]();
   if (S.tab==="style") bindStyle();
   renderRails();
+  { const n=$("#cpNote"); if (n) n.textContent = Shop.sources(S.g).coupang ? CP_NOTE : ""; }
   flushFigs();
   clearTimeout(render._t); render._t=setTimeout(()=>Shop.auto(S.g), S.tab==="style"?6000:400);
 }
@@ -2125,7 +2133,8 @@ function wearPanel(){
     <p class="note" style="margin:0">카드의 "입혀보기"를 누르면 이 아바타에 바로 입혀져요.</p></div>`;
 }
 function statusLine(g){ const st=Shop.info(g);
-  if (realOn(g) && st) return `<div class="srcline"><span class="tag ok">실제 판매 상품</span><span>네이버 쇼핑 기준 <b>${st.n.toLocaleString()}개</b> 상품을 내 스타일로 분석${st.updated?` · 데이터 ${new Date(st.updated).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})} 기준`:""} · 자동 갱신</span></div>`;
+  const so=Shop.sources(g), sl=[so.curated?`운영자 추천 ${so.curated}`:"", so.coupang?`쿠팡 ${so.coupang}`:"", so.naver?`네이버 ${so.naver}`:""].filter(Boolean).join(" · ");
+  if (realOn(g) && st) return `<div class="srcline"><span class="tag ok">실제 판매 상품</span><span><b>${st.n.toLocaleString()}개</b> 상품(${sl})을 내 스타일로 분석${st.updated?` · 데이터 ${new Date(st.updated).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})} 기준`:""} · 자동 갱신</span></div>`;
   return Shop.busy() ? "" : `<div class="srcline"><span class="tag">예시 상품</span><span>실제 판매 상품 데이터를 준비 중이에요. 준비되면 자동으로 바뀌어요.</span></div>`; }
 function connectPanel(open){ const a=S.api||{}, st=Shop.info(S.g), app=Shop.hasBridge();
   return `<details class="panel fs conn" ${open?"open":""}><summary><b>개발자 설정 · 실제 상품 API</b> <span class="small muted">일반 사용자는 설정할 필요가 없어요</span> <span class="tag ${Shop.keys()?"ok":""}">${Shop.keys()?"직접 키 사용 중":"자동 데이터 사용"}</span>${st?` <span class="small muted">· 실제 상품 ${st.n}개 분석 · ${new Date(st.at).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})} 업데이트</span>`:""}</summary>
@@ -2166,7 +2175,7 @@ function vRecs(){
       <div id="qOut" class="fs">${Shop.configured()?`<p class="note" style="margin:0">입력한 옷을 여러 쇼핑몰에서 찾아 내 스타일 점수 순서로 보여드려요.</p>`:connectCTA()}</div>
     </div>
     ${hidden?`<p class="note">관심 없어요로 숨긴 상품 ${hidden}개 · <button class="btn sm" data-act="unhide">다시 보기</button></p>`:""}
-    ${real?`<p class="note">가격·재고는 수시로 바뀌어요. 최종 가격·사이즈표·배송 조건은 판매처에서 확인해 주세요. 상품 정보: 네이버 쇼핑 검색 API.</p>`:""}
+    ${real?`<p class="note">가격·재고는 수시로 바뀌어요. 최종 가격·사이즈표·배송 조건은 판매처에서 확인해 주세요.${Shop.sources(g).coupang?" "+CP_NOTE:""}</p>`:""}
    </div>
    <aside class="side">${wearPanel()}</aside>
   </div>
@@ -2243,7 +2252,7 @@ function vWish(){
 }
 
 /* --- 브랜드 (로고·슬로건) --- */
-function devPanel(){ return `<div style="margin-top:28px">${connectPanel(false)}</div>`; }
+function devPanel(){ return ""; }
 function vBrand(){
   const icon = (c1, c2, fg) => `<svg viewBox="0 0 100 100"><defs><linearGradient id="ic${c1.slice(1)}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs><rect x="2" y="2" width="96" height="96" rx="28" fill="url(#ic${c1.slice(1)})"/><path d="M37 31 L47 41 L65 20" fill="none" stroke="${fg}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M47 41 L47 46 L18 68 Q14 72 20 74 L80 74 Q86 72 82 68 L53 46" fill="none" stroke="${fg}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   return `<section class="tab">

@@ -1,8 +1,13 @@
-# OTJAL 실제 판매 상품 카탈로그 자동 갱신 (6시간마다) — Rat Rae Choi
+# OTJAL 실제 판매 상품 카탈로그 자동 갱신 — Rat Rae Choi
+#  · 6시간마다: 쿠팡 파트너스 Open API(키가 있을 때) + 운영자 추천 목록(data/curated.csv)
+#  · data/curated.csv 를 고치면 바로 다시 만들어 1~2분 안에 앱에 반영
 name: catalog
 on:
   schedule:
     - cron: "17 */6 * * *"
+  push:
+    branches: [main]
+    paths: ["data/curated.csv", "tools/build-catalog.py"]
   workflow_dispatch:
 permissions:
   contents: write
@@ -14,14 +19,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - name: 네이버 쇼핑에서 실제 상품 수집
+      - name: 실제 상품 모으기
         env:
-          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
-          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          COUPANG_ACCESS_KEY: ${{ secrets.COUPANG_ACCESS_KEY }}
+          COUPANG_SECRET_KEY: ${{ secrets.COUPANG_SECRET_KEY }}
         run: python tools/build-catalog.py
       - name: 카탈로그 반영
         run: |
           git config user.name "otjal-bot"
           git config user.email "actions@users.noreply.github.com"
           git add docs/catalog
-          git diff --cached --quiet || (git commit -m "catalog: 실제 판매 상품 갱신 $(date -u +%F' '%H:%M)" && git push)
+          git diff --cached --quiet || (git commit -m "catalog: 실제 판매 상품 갱신 $(date -u +%F' '%H:%M)" && git pull --rebase && git push)

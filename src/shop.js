@@ -1,11 +1,17 @@
-/* ---------- 실제 판매 상품 추천 엔진 (네이버 쇼핑 검색 API 기반) — OTJAL · Rat Rae Choi ----------
+/* ---------- 실제 판매 상품 추천 엔진 (네이버 쇼핑 데이터 기반) — OTJAL · Rat Rae Choi ----------
+   사용자는 설정할 것이 없습니다: 개발 단계에서 GitHub Actions가 6시간마다 네이버 쇼핑 검색 API로 실제 상품을 모아 카탈로그(JSON)로 올리고,
+   앱은 그 카탈로그를 받아 기기 안에서 "내 스타일" 점수로 1~50위를 매깁니다.
    네이버 쇼핑은 네이버 스마트스토어·11번가·G마켓·옥션·SSG·롯데ON·무신사·29CM·W컨셉·LF몰 등 여러 쇼핑몰 상품을 함께 검색해 줍니다.
    내 스타일(체형·스타일·색상·상황·예산·중요도·쇼핑몰)로 검색어를 만들고, 받아온 실제 상품을 OTJAL 점수로 다시 매겨 1~50위로 보여줍니다. */
 const Shop = (() => {
   const CK = "otjal-cat-v1", TTL = 12*3600*1000;
   const api = () => (S.api ||= {cid:"", csec:"", proxy:""});
   const hasBridge = () => !!(window.OTJALApp && typeof OTJALApp.http === "function");
-  const configured = () => { const a=api(); return !!(a.cid && a.csec); };
+  const CAT_URL = "https://sadness500-boop.github.io/OTJAL/docs/catalog/";
+  const keys = () => { const a=api(); return !!(a.cid && a.csec); };
+  let catState = "unknown"; const MEM = {};           // 카탈로그 상태: unknown | ok | missing
+  const configured = () => keys() || catState!=="missing";
+  const live = () => catState==="ok" || keys();
   let seq=0; const pend={};
   window.__otjalHttp = (id, status, body) => { const p=pend[id]; if (!p) return; delete pend[id];
     (status>=200 && status<300) ? p.res(body) : p.rej(new Error(errMsg(status, body))); };
@@ -75,7 +81,7 @@ const Shop = (() => {
   let C = (()=>{ try { return JSON.parse(localStorage.getItem(CK)||"{}"); } catch(e){ return {}; } })();
   const persist = () => { try { localStorage.setItem(CK, JSON.stringify(C)); } catch(e){ try { for (const g in C) C[g].items=C[g].items.slice(0,240); localStorage.setItem(CK, JSON.stringify(C)); } catch(_){} } };
   const has = g => !!(C[g] && C[g].items && C[g].items.length);
-  const info = g => C[g] ? {at:C[g].at, n:C[g].items.length, sig:C[g].sig, queries:C[g].nq} : null;
+  const info = g => C[g] ? {at:C[g].at, n:C[g].total||C[g].items.length, sig:C[g].sig, queries:C[g].nq, src:C[g].src, updated:C[g].updated} : null;
 
   /* ---- 쇼핑몰 설정 반영 ---- */
   const MALL = [[/무신사/,"musinsa"],[/29cm/i,"29cm"],[/w컨셉|wconcept/i,"wconcept"],[/lf ?몰|lfmall/i,"lfmall"],[/ssf/i,"ssfshop"],[/ssg|신세계|이마트/i,"ssg"],[/롯데/,"lotteon"],[/gs ?shop|gs샵/i,"gsshop"],
@@ -84,12 +90,23 @@ const Shop = (() => {
   const siteOfMall = m => { for (const [re,id] of MALL) if (re.test(m)) return id; return "naverplus"; };
   const allowed = it => { const sid=siteOfMall(it.mall); return S.sites.includes(sid) || (sid==="naverplus" && (S.sites.includes("naver")||S.sites.includes("naverplus"))); };
 
+  /* ---- 카탈로그 (개발 단계에서 자동 수집된 실제 상품) ---- */
+  async function loadCatalog(g){ if (MEM[g] && Date.now()-MEM[g].t < 30*60*1000) return MEM[g];
+    const r = await fetch(CAT_URL+g+".json", {cache:"no-cache"}); if (!r.ok) throw new Error("catalog "+r.status);
+    const j = await r.json(), out=[];
+    (j.items||[]).forEach(x=>{ const it=toItem({productId:x.id,title:x.t,image:x.img,link:x.l,lprice:x.p,mallName:x.m,brand:x.b,category1:"패션의류",category2:x.c2,category3:x.c3,category4:x.c4}, g, x.q, x.r); if (it) out.push(it); });
+    catState="ok"; return MEM[g]={t:Date.now(), updated:j.updated, items:out}; }
+  async function fromCatalog(g){ prog={g,done:0,total:1,err:""}; emit(); const c=await loadCatalog(g); prog.done=1; emit(); return {items:c.items, updated:c.updated}; }
+
   /* ---- 불러오기 ---- */
   let busy=null; const listeners=new Set(); let prog={g:null,done:0,total:0,err:""};
   const emit = () => listeners.forEach(f=>{ try { f(prog); } catch(e){} });
-  async function refresh(g, force){ if (!configured()) throw new Error("먼저 네이버 검색 API 키를 넣어 주세요");
+  async function refresh(g, force){
     if (busy) return busy;
-    busy=(async()=>{ const qs=queries(g); prog={g,done:0,total:qs.length,err:""}; emit();
+    busy=(async()=>{
+      if (!keys() || catState!=="missing"){ try { const c=await fromCatalog(g); return finish(g, c.items, "catalog", c.updated); }
+        catch(e){ catState="missing"; if (!keys()){ prog.err="실제 상품 데이터를 준비 중이에요"; emit(); throw new Error(prog.err); } } }
+      const qs=queries(g); prog={g,done:0,total:qs.length,err:""}; emit();
       const seen=new Map(); let fails=0, lastErr=null;
       const worker=async()=>{ while(qs.length){ const q=qs.shift(); try { const r=await search(q,100);
             (r.items||[]).forEach((x,i)=>{ const it=toItem(x,g,q,i); if (!it) return; const prev=seen.get(it.id); if (!prev || prev.qrank>i) seen.set(it.id,it); }); }
@@ -98,12 +115,14 @@ const Shop = (() => {
       await Promise.all([worker(),worker(),worker()]);
       if (!seen.size){ prog.err=lastErr?lastErr.message:"조건에 맞는 상품을 찾지 못했어요"; emit(); throw lastErr||new Error(prog.err); }
       // 같은 상품 다른 판매자(제목 거의 같음) 정리
-      const byT=new Map(); for (const it of seen.values()){ const k=it.kw.replace(/[^가-힣a-z0-9]/gi,"").slice(0,22)+it.cat; const o=byT.get(k); if (!o || it.price<o.price) byT.set(k,it); }
+      return finish(g, [...seen.values()], "api", null); })();
+    try { return await busy; } finally { busy=null; } }
+  function finish(g, list, src, updated){
+      const byT=new Map(); for (const it of list){ const k=it.kw.replace(/[^가-힣a-z0-9]/gi,"").slice(0,22)+it.cat; const o=byT.get(k); if (!o || it.price<o.price) byT.set(k,it); }
       const items=[...byT.values()]; const p=S.profile[g];
       items.forEach(it=>{ it.pre=score(it,p).total; }); items.sort((a,b)=>b.pre-a.pre);
-      C[g]={sig:sigOf(g), at:Date.now(), nq:prog.total, items:items.slice(0,360)}; persist(); apply(g); return C[g]; })();
-    try { return await busy; } finally { busy=null; } }
-  const stale = g => !has(g) || C[g].sig!==sigOf(g) || Date.now()-C[g].at>TTL;
+      C[g]={sig:sigOf(g), at:Date.now(), nq:prog.total, src, updated, total:items.length, items:items.slice(0, src==="catalog"?600:360)}; persist(); apply(g); return C[g]; }
+  const stale = g => !has(g) || C[g].sig!==sigOf(g) || Date.now()-C[g].at>(C[g].src==="catalog"?3*3600*1000:TTL);
   function auto(g){ if (configured() && stale(g) && !busy) refresh(g).then(()=>{ if (typeof render==="function") render(); }).catch(()=>{ if (typeof render==="function") render(); }); }
 
   /* ---- 앱 카탈로그에 적용 ---- */
@@ -122,11 +141,20 @@ const Shop = (() => {
     const g=it.g, gw=g==="F"?"여성":"남성", isCol=w=>CW.some(([re])=>re.test(w));
     const words=it.kw.split(" ").filter(w=>w && !/여성|남성|\/|\d/.test(w) && !isCol(w));
     const q=it.real ? `${gw} ${words.slice(-3).join(" ")}` : `${gw} ${COLORS[it.color].n.replace("소프트","")} ${it.kw}`;
-    const r=await search(q,60); const p=S.profile[g];
+    const p=S.profile[g];
+    if (!keys()){ const c=await loadCatalog(g), tok=words.concat(it.kw.split(" ")).filter(w=>w.length>1);
+      return c.items.filter(x=>x.id!==it.id && x.cat===it.cat && (it.real || x.shape===it.shape || true)).filter(allowed)
+        .map(x=>{ const ov=tok.reduce((a,w)=>a+(x.kw.includes(w)?1:0),0)+(x.shape===it.shape?1.5:0)+(x.color===it.color?1:0); if (!BYID[x.id]) BYID[x.id]=x; return {it:x, sc:score(x,p), ov}; })
+        .sort((a,b)=>(b.ov*6+b.sc.total)-(a.ov*6+a.sc.total)).slice(0,n); }
+    const r=await search(q,60);
     return (r.items||[]).map((x,i)=>toItem(x,g,q,i)).filter(x=>x && x.id!==it.id && x.cat===it.cat).filter(allowed).map(x=>{ if (!BYID[x.id]) BYID[x.id]=x; return {it:x, sc:score(x,p)}; }).sort((a,b)=>b.sc.total-a.sc.total).slice(0,n); }
-  async function find(text, g, n=20){ const gw=g==="F"?"여성":"남성", q=/여성|남성/.test(text)?text:`${gw} ${text}`; const r=await search(q,100); const p=S.profile[g];
+  async function find(text, g, n=20){ const gw=g==="F"?"여성":"남성", q=/여성|남성/.test(text)?text:`${gw} ${text}`; const p=S.profile[g];
+    if (!keys()){ const c=await loadCatalog(g), tok=text.split(/\s+/).filter(w=>w.length>0);
+      const res=c.items.filter(x=>tok.every(w=>x.full.includes(w)||x.kw.includes(w))).filter(allowed); for (const it of res) BYID[it.id]=it;
+      return res.map(x=>({it:x, sc:score(x,p)})).sort((a,b)=>b.sc.total-a.sc.total).slice(0,n); }
+    const r=await search(q,100);
     const res=(r.items||[]).map((x,i)=>toItem(x,g,q,i)).filter(Boolean).filter(allowed); for (const it of res) BYID[it.id]=it;
     return res.map(x=>({it:x, sc:score(x,p)})).sort((a,b)=>b.sc.total-a.sc.total).slice(0,n); }
   async function test(){ const r=await search("여성 니트",1); return (r.total||0); }
-  return { configured, hasBridge, refresh, auto, apply, has, info, rankTop, similar, find, test, stale, on:f=>listeners.add(f), prog:()=>prog, busy:()=>!!busy, siteOfMall };
+  return { configured, live, keys, catalogState:()=>catState, hasBridge, refresh, auto, apply, has, info, rankTop, similar, find, test, stale, on:f=>listeners.add(f), prog:()=>prog, busy:()=>!!busy, siteOfMall };
 })();

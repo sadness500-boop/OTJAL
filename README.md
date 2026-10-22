@@ -1,7 +1,7 @@
 # OTJAL
 
 **나에게 잘 맞는 옷, OTJAL이 찾아준다.**
-AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.6.0**
+AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.6.1**
 
 ## 🌐 웹 버전 (크롬·엣지·사파리)
 
@@ -12,7 +12,7 @@ AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결
 ## 📱 Android 앱 다운로드
 
 - **[OTJAL.apk 내려받기](https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk)** (항상 최신 버전)
-- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.6.0.apk`)
+- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.6.1.apk`)
 - Android 5.0 이상 · 설치 시 "출처를 알 수 없는 앱 설치"를 한 번 허용해야 해요. iPhone은 아직 지원하지 않아요.
 
 ## 주요 기능
@@ -67,12 +67,22 @@ KEYSTORE=/경로/otjal-release.keystore KS_PASS=비밀번호 ./build-apk.sh
 - Designed & Developed by **Rat Rae Choi**
 
 
-## 실제 판매 상품 연결 (v0.6.0~)
+## 실제 판매 상품 연결 (v0.6.1~)
 OTJAL은 **네이버 쇼핑 검색 API**로 네이버 스마트스토어·11번가·G마켓·옥션·SSG·롯데ON·무신사·29CM·W컨셉·LF몰 등 여러 쇼핑몰의 실제 판매 상품을 모으고, "내 스타일"(체형·스타일·색상·상황·예산·추천 기준 중요도·쇼핑몰) 기준으로 점수를 매겨 **1~50위**를 보여줍니다. 카드의 "구매하러 가기"는 해당 상품 페이지로 바로 연결됩니다.
 
 1. [네이버 개발자센터](https://developers.naver.com/apps/#/register) → Application 등록 → 사용 API **검색** → 비로그인 오픈 API 서비스 환경 **WEB**: `https://sadness500-boop.github.io`
 2. 발급된 Client ID / Client Secret을 앱의 **맞춤 추천 → 실제 상품 연결**에 입력 (이 기기에만 저장, 하루 25,000회 무료)
 3. **Android 앱**은 바로 동작합니다. **웹 버전**은 브라우저 보안(CORS) 때문에 중계 서버가 필요합니다 — `tools/naver-proxy-worker.js`를 Cloudflare Workers(무료)에 올리고 그 주소를 "중계 서버 주소"에 입력하세요.
 
+- 쿠팡처럼 네이버 쇼핑에 상품을 제공하지 않는 쇼핑몰은 결과에 나오지 않을 수 있습니다.
+- 가격·재고는 실시간으로 바뀌므로 최종 가격·사이즈표는 판매처에서 확인하세요.## 실제 판매 상품 데이터 (개발자 1회 설정)
+사용자는 아무 설정 없이 앱만 열면 됩니다. 실제 상품 데이터는 저장소의 GitHub Actions(`.github/workflows/catalog.yml`)가 **6시간마다** 네이버 쇼핑 검색 API로 수집해 `docs/catalog/F.json`, `M.json`으로 올리고, 앱(웹·Android)은 이 파일을 받아 각자의 "내 스타일" 기준으로 1~50위를 매깁니다.
+
+개발자가 처음 한 번만 할 일:
+1. [네이버 개발자센터](https://developers.naver.com/apps/#/register) → Application 등록 → 사용 API **검색** → 비로그인 오픈 API 서비스 환경 **WEB**: `https://sadness500-boop.github.io`
+2. GitHub 저장소 → **Settings → Secrets and variables → Actions → New repository secret** 에 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 두 개 등록
+3. **Actions → catalog → Run workflow** 로 첫 수집 실행 (이후 6시간마다 자동)
+
+- 1회 수집 ≈ 330회 API 호출(하루 약 1,300회, 무료 한도 25,000회)
 - 쿠팡처럼 네이버 쇼핑에 상품을 제공하지 않는 쇼핑몰은 결과에 나오지 않을 수 있습니다.
 - 가격·재고는 실시간으로 바뀌므로 최종 가격·사이즈표는 판매처에서 확인하세요.

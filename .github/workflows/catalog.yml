@@ -1,0 +1,27 @@
+# OTJAL 실제 판매 상품 카탈로그 자동 갱신 (6시간마다) — Rat Rae Choi
+name: catalog
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: catalog
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: 네이버 쇼핑에서 실제 상품 수집
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: python tools/build-catalog.py
+      - name: 카탈로그 반영
+        run: |
+          git config user.name "otjal-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/catalog
+          git diff --cached --quiet || (git commit -m "catalog: 실제 판매 상품 갱신 $(date -u +%F' '%H:%M)" && git push)

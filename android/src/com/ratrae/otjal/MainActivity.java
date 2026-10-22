@@ -20,6 +20,12 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+import org.json.JSONObject;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Iterator;
 
 public class MainActivity extends Activity {
     private WebView web;
@@ -99,7 +105,40 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String version() {
-            return "0.5.4";
+            return "0.6.0";
+        }
+
+        /* 실제 상품 검색 — 네이버 쇼핑 검색 API만 허용 (브라우저 CORS 제한 없이 앱에서 직접 호출) */
+        @JavascriptInterface
+        public void http(final String id, final String url, final String headersJson) {
+            new Thread(new Runnable() {
+                public void run() {
+                    int code = 0;
+                    String body;
+                    HttpURLConnection c = null;
+                    try {
+                        if (!url.startsWith("https://openapi.naver.com/v1/search/")) throw new Exception("허용되지 않은 주소");
+                        c = (HttpURLConnection) new URL(url).openConnection();
+                        c.setConnectTimeout(12000);
+                        c.setReadTimeout(15000);
+                        c.setRequestProperty("Accept", "application/json");
+                        JSONObject h = new JSONObject(headersJson);
+                        Iterator<String> it = h.keys();
+                        while (it.hasNext()) { String k = it.next(); c.setRequestProperty(k, h.getString(k)); }
+                        code = c.getResponseCode();
+                        InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+                        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                        if (in != null) { byte[] b = new byte[8192]; int n; while ((n = in.read(b)) > 0) bo.write(b, 0, n); in.close(); }
+                        body = bo.toString("UTF-8");
+                    } catch (Exception e) {
+                        body = String.valueOf(e.getMessage());
+                    } finally {
+                        if (c != null) c.disconnect();
+                    }
+                    final String js = "window.__otjalHttp && window.__otjalHttp(" + JSONObject.quote(id) + "," + code + "," + JSONObject.quote(body) + ")";
+                    runOnUiThread(new Runnable() { public void run() { web.evaluateJavascript(js, null); } });
+                }
+            }).start();
         }
     }
 }

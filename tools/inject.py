@@ -7,6 +7,13 @@ s=html.find('/* ---------- 3D 실사 바디');
 if s<0: s=html.find('const Fig3D = (() => {')
 e=html.find('})();', html.find('return {ok, mountLive', s))+len('})();\n')
 html=html[:s]+mod+html[e:]
+def module(marker, endmark, path):
+    global html
+    s=html.find(marker); e=html.find('})();', html.find(endmark, s))+len('})();\n')
+    if s<0: raise SystemExit('module marker missing: '+marker)
+    html=html[:s]+open(path,encoding='utf-8').read().rstrip()+'\n'+html[e:]
+module('/* ---------- 실제 판매 상품 추천 엔진','return { configured',R+'src/shop.js')
+module('/* ---------- 패션 일러스트','return { list:',R+'src/art.js')
 def put(id_, typ, data):
     global html
     tag=f'<script id="{id_}" type="{typ}">'

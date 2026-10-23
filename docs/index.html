@@ -425,6 +425,15 @@ h1,h2{letter-spacing:-.02em}
 .script{font-weight:400}
 
 /* v0.6.0 — 실제 판매 상품 */
+.frow{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+.fhead{display:flex;gap:10px;align-items:center}.fhead .th{flex:none;width:44px;height:44px;border-radius:10px;overflow:hidden;background:var(--chip);display:grid;place-items:center}
+.fhead .th svg{width:80%;height:auto}
+.fbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.fbtn{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--ink);text-decoration:none;font-weight:700;font-size:15.5px}
+.fbtn{white-space:nowrap}.fbtn i{width:10px;height:10px;border-radius:50%;flex:none}.fbtn span{margin-left:auto;font-size:13.5px;color:var(--muted);font-weight:600;padding-left:8px}
+.fbtn:hover{border-color:var(--acc)}.fbtn.real{background:var(--soft);border-color:color-mix(in srgb,var(--acc) 40%,var(--line))}
+.fnote{margin:0;padding:10px 12px;border-radius:12px;background:var(--soft);color:var(--ink2);font-size:15px}
+
 .srcline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);font-size:15.5px;color:var(--ink2)}
 @media (max-width:900px){ .recLay .side{order:2} }
 .pimg{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;background:#fff}
@@ -534,7 +543,7 @@ h1,h2{letter-spacing:-.02em}
 <script>
 /* ===== OTJAL v0.4.0 — Designed & Developed by Rat Rae Choi ===== */
 const CREATOR = "Rat Rae Choi";
-const APP_NAME = "OTJAL", APP_VERSION = "0.6.2";
+const APP_NAME = "OTJAL", APP_VERSION = "0.6.3";
 const REPO_URL = "https://github.com/sadness500-boop/OTJAL";
 const APK_URL = "https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk";
 const $ = (s, r = document) => r.querySelector(s);
@@ -1826,6 +1835,24 @@ function prodRow(x, rank){ const it=x.it||x, sc=x.sc;
     <div class="pact"><a class="btn sm pri" href="${esc(it.link)}" target="_blank" rel="noopener">구매하기</a><button class="btn sm" data-act="wear" data-id="${it.id}" data-stay="1">입혀보기</button></div></div>`; }
 const CP_NOTE = "이 서비스는 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.";
 function connectCTA(msg){ return `<div class="cta fs"><b>${msg||"실제 판매 상품 데이터를 준비하고 있어요"}</b><span class="small muted">따로 설정할 것은 없어요. 데이터가 준비되면 이 자리에 여러 쇼핑몰의 실제 판매 상품이 자동으로 나타나요.</span></div>`; }
+/* --- 한번에 찾기: 네이버 플러스스토어 · 다음 쇼핑하우 검색 결과로 바로 연결 --- */
+const FIND2 = ["naverplus","shoppinghow"].map(id=>SITES.find(s=>s.id===id));
+const findKw = it => it.real ? `${it.g==="F"?"여성":"남성"} ${it.kw}` : kwFor(it);
+const mainItem = items => items.find(it=>it.cat==="top"||it.cat==="dress") || items[0];
+const findHref = items => items && items.length ? FIND2[0].u+encodeURIComponent(findKw(mainItem(items))) : "#";
+function openFind(items, title, opened){
+  $("#shopDlg").classList.remove("wide");
+  const row = (it,i) => { const kw=findKw(it);
+    return `<div class="frow"><div class="fhead"><span class="th">${thumb(it)}</span><div style="min-width:0"><div class="sub" style="margin:0">${CATNAME[it.cat]}</div><b>${esc(it.name)}</b></div></div>
+      <input id="fkw${i}" class="input" value="${esc(kw)}" aria-label="${esc(it.name)} 검색어">
+      <div class="fbtns">${FIND2.map(s=>`<a class="fbtn" id="fb${i}_${s.id}" href="${s.u}${encodeURIComponent(kw)}" target="_blank" rel="noopener"><i style="background:${s.c}"></i>${s.n}<span>결과 열기 ↗</span></a>`).join("")}${it.real?`<a class="fbtn real" href="${esc(it.link)}" target="_blank" rel="noopener">상품 페이지 바로가기<span>↗</span></a>`:""}</div></div>`; };
+  $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">한번에 찾기 · 네이버 플러스스토어 · 다음 쇼핑하우</div><h3>${esc(title)}</h3></div><button class="btn sm" data-close>닫기</button></div>
+    ${opened?`<p class="fnote">✓ <b>${esc(mainItem(items).name)}</b>의 <b>네이버 플러스스토어</b> 검색 결과를 새 창으로 열었어요. 브라우저는 한 번 누를 때 창을 하나만 열 수 있어서, 다른 결과는 아래 버튼으로 열어 주세요.</p>`:""}
+    <div class="fs" style="gap:12px">${items.map(row).join("")}</div>
+    <p class="note" style="margin:0">검색어를 고치면 버튼 주소도 바로 바뀌어요. 가격·재고·반품 조건은 판매처에서 최종 확인해 주세요.</p>`;
+  const d = $("#shopDlg"); if (!d.open) d.showModal();
+  items.forEach((it,i)=>{ const inp=$("#fkw"+i); if (inp) inp.oninput=()=>FIND2.forEach(s=>{ const a=$(`#fb${i}_${s.id}`); if (a) a.href=s.u+encodeURIComponent(inp.value); }); });
+}
 function openShop(items, title){
   $("#shopDlg").classList.remove("wide");
   const ex=items.filter(it=>!it.real);
@@ -2019,7 +2046,7 @@ function vHome(){
         <div class="eyebrow">${S.pick.occ}룩 · 매칭 ${o.score}%</div>
         ${o.items.map(it=>{const z=recSize(it,p);return `<div class="lookItem"><span class="th">${thumb(it)}</span><span style="min-width:0"><b>${it.name}</b><span class="muted">${won(it.price)}${z?` · ${z.name}`:""}</span></span></div>`}).join("")}
         <div class="total"><span>합계</span><b>${won(o.total)}</b></div>
-        <div class="chips"><button class="btn sm pri" data-act="shopLook" data-li="${S.pick.i % list.length}" data-o="${S.pick.occ}">한번에 구매</button><button class="btn sm" data-act="tryLook" data-li="${S.pick.i % list.length}" data-o="${S.pick.occ}">피팅룸</button></div>
+        <div class="chips"><a class="btn sm pri" data-act="shopLook" data-li="${S.pick.i % list.length}" data-o="${S.pick.occ}" href="${findHref(o.items)}" target="_blank" rel="noopener">한번에 찾기</a><button class="btn sm" data-act="tryLook" data-li="${S.pick.i % list.length}" data-o="${S.pick.occ}">피팅룸</button></div>
       </div>` : ""}
     </div>
   </div>
@@ -2141,7 +2168,7 @@ function wearPanel(){
     <div class="fs" style="gap:6px">${["outer","top","bottom","dress","shoes","bag"].filter(c=>look[c]).map(c=>{const it=look[c], rs=recSize(it,p), cur=f.size[it.id]!=null?f.size[it.id]:(rs&&rs.idx); const rg=rs&&rs.idx!==null?regions(it,cur,p):[]; const bad=rg.some(r=>r.lv==="bad");
       return `<div class="wi"><button class="lnk" data-act="detail" data-id="${it.id}">${CATNAME[c]} · ${it.name}</button><span class="tag ${bad?"bad":"ok"}">${rs?(rs.idx===null?rs.name:SZ[g].names[cur]):"FREE"}${rg[1]?` ${rg[1].k} ${rg[1].t}`:rg[0]?` ${rg[0].k} ${rg[0].t}`:""}</span></div>`;}).join("")}</div>
     <div class="total"><span>착장 합계</span><b>${won(total)}</b></div>
-    <div class="chips"><button class="btn sm pri" data-go="fit">피팅룸에서 사이즈 맞추기</button><button class="btn sm" data-act="shopFit">착장 구매</button></div>
+    <div class="chips"><button class="btn sm pri" data-go="fit">피팅룸에서 사이즈 맞추기</button><button class="btn sm" data-act="shopFit">착장 찾기</button></div>
     <p class="note" style="margin:0">카드의 "입혀보기"를 누르면 이 아바타에 바로 입혀져요.</p></div>`;
 }
 function statusLine(g){ const st=Shop.info(g);
@@ -2212,7 +2239,7 @@ function vCoordi(){
       <div class="head" style="align-items:center"><h3>${occ}룩 ${String.fromCharCode(65+i)}</h3>${i===0?`<span class="sticker">OTJAL Pick</span>`:`<span class="tag">매칭 ${o.score}%</span>`}</div>
       ${o.items.map(it=>{const z=recSize(it,p);return `<div class="lookItem"><span class="th">${thumb(it)}</span><span style="min-width:0"><b>${it.name}</b><span class="muted">${won(it.price)}${z?` · ${z.name}`:""}</span></span></div>`}).join("")}
       <div class="total"><span>합계</span><b>${won(o.total)}</b></div>
-      <div class="chips"><button class="btn sm pri" data-act="shopLook" data-li="${i}" data-o="${occ}">한번에 구매</button><button class="btn sm" data-act="tryLook" data-li="${i}" data-o="${occ}">피팅룸</button></div>
+      <div class="chips"><a class="btn sm pri" data-act="shopLook" data-li="${i}" data-o="${occ}" href="${findHref(o.items)}" target="_blank" rel="noopener">한번에 찾기</a><button class="btn sm" data-act="tryLook" data-li="${i}" data-o="${occ}">피팅룸</button></div>
     </div></article>`).join("") || `<p class="muted">이 상황에 맞는 아이템이 부족해요. 스타일 설정을 넓혀 보세요.</p>`}</div>
   </section>`;
 }
@@ -2235,7 +2262,7 @@ function vFit(){
   const total = Object.values(look).reduce((a,b)=>a+b.price,0);
   return `<section class="tab">
   <div class="head"><div><div class="eyebrow">Virtual fitting room</div><h2>피팅룸</h2><p class="muted">내 치수로 만든 3D 실사 바디에 사이즈별로 입혀 보고 정면·측면·후면·회전으로 확인해요. 사이즈 버튼을 바꾸면 옷 품과 기장이 실제 치수 비율대로 달라져요.</p></div>
-    <div class="chips"><button class="btn" data-go="style">체형 수정</button><button class="btn" data-act="autoSize">추천 사이즈로 자동 맞춤</button><button class="btn pri" data-act="shopFit">이 착장 구매하기</button></div></div>
+    <div class="chips"><button class="btn" data-go="style">체형 수정</button><button class="btn" data-act="autoSize">추천 사이즈로 자동 맞춤</button><button class="btn pri" data-act="shopFit">이 착장 찾기</button></div></div>
   <div class="fit">
     <div class="fitStage">${figHTML("live",look,f.size,{cls:"live",ruler:true})}
       <div class="total"><span>착장 합계</span><b>${won(total)}</b></div>
@@ -2255,7 +2282,7 @@ function vWish(){
   const total=list.reduce((a,b)=>a+b.price,0);
   return `<section class="tab">
   <div class="head"><div><div class="eyebrow">Wishlist</div><h2>찜한 아이템</h2><p class="muted">${list.length}개 · 합계 ${won(total)} · 예산 기준 아이템당 ${won(p.bmax)}</p></div>
-  ${list.length?`<button class="btn pri" data-act="shopWish">찜 전체 구매하기</button>`:""}</div>
+  ${list.length?`<button class="btn pri" data-act="shopWish">찜 전체 찾기</button>`:""}</div>
   <div class="wl">${list.map(it=>{const sc=score(it,p), z=sc.size; return `<div class="wrow"><span class="th">${thumb(it)}</span>
     <div style="min-width:0"><b>${it.name}</b><div class="small muted">${won(it.price)} · 매칭 ${sc.total}%${z?` · ${z.idx===null?"":"추천 "}${z.name}`:""}</div></div>
     <div class="chips"><button class="btn sm" data-act="try" data-id="${it.id}">입어보기</button><button class="btn sm" data-act="shop" data-id="${it.id}">찾기</button><button class="btn sm" data-act="wish" data-id="${it.id}" aria-pressed="true">삭제</button></div></div>`}).join("") ||
@@ -2301,7 +2328,7 @@ function vBrand(){
 
 /* ---------- 이벤트 ---------- */
 document.addEventListener("click", e => {
-  const b = e.target.closest("button, a[data-go], [role=button][data-act]"); if (!b) return;
+  const b = e.target.closest("button, a[data-go], a[data-act], [role=button][data-act]"); if (!b) return;
   const d = b.dataset, g = S.g, p = P();
   if (d.go){ e.preventDefault(); go(d.go); return; }
   if (d.g){ S.g = d.g; save(); render(); return; }
@@ -2358,10 +2385,10 @@ document.addEventListener("click", e => {
     case "shopRefresh": Shop.refresh(g,true).then(()=>render()).catch(err=>{ const mm=$("#apiMsg")||$("#shopProg"); if (mm) mm.textContent="불러오기 실패: "+err.message; }); render(); break;
     case "shop": { const it=BYID[d.id]; openShop([it], it.name); break; }
     case "try": { keep(d.id); wear(BYID[d.id]); save(); if (inDlg) $("#shopDlg").close(); go("fit"); break; }
-    case "shopLook": { const o=outfits(g,d.o,5)[+d.li]; if(o) openShop(o.items, `${d.o}룩 한번에 구매하기`); break; }
+    case "shopLook": { const o=outfits(g,d.o,5)[+d.li]; if(o) openFind(o.items, `${d.o}룩 한번에 찾기`, b.tagName==="A"); break; }
     case "tryLook": { const o=outfits(g,d.o,5)[+d.li]; if(o){ const f=S.fit[g]; for (const c of ["top","bottom","dress","outer","shoes","bag"]) f[c] = o.look[c] ? o.look[c].id : ""; save(); go("fit"); } break; }
-    case "shopFit": { const l=Object.values(curLook()); if(l.length) openShop(l, "피팅룸 착장 구매하기"); break; }
-    case "shopWish": { const l=S.wish.map(id=>BYID[id]).filter(it=>it&&it.g===g); openShop(l, "찜 목록 구매하기"); break; }
+    case "shopFit": { const l=Object.values(curLook()); if(l.length) openFind(l, "피팅룸 착장 찾기"); break; }
+    case "shopWish": { const l=S.wish.map(id=>BYID[id]).filter(it=>it&&it.g===g); openFind(l, "찜 목록 찾기"); break; }
   }
 });
 document.addEventListener("change", e => {

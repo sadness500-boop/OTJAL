@@ -13,6 +13,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.webkit.GeolocationPermissions;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -29,6 +32,8 @@ import java.util.Iterator;
 
 public class MainActivity extends Activity {
     private WebView web;
+    private String geoOrigin;
+    private GeolocationPermissions.Callback geoCb;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -48,7 +53,17 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(true);
         s.setTextZoom(100);
         s.setSupportMultipleWindows(false);
-        web.setWebChromeClient(new WebChromeClient());
+        s.setGeolocationEnabled(true);
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback cb) {
+                if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                        && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    geoOrigin = origin; geoCb = cb;
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 7);
+                } else cb.invoke(origin, true, false);
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -65,6 +80,16 @@ public class MainActivity extends Activity {
         setContentView(web);
         if (state != null) web.restoreState(state);
         else web.loadUrl("file:///android_asset/www/index.html");
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        if (code == 7 && geoCb != null) {
+            boolean ok = false;
+            for (int r : res) if (r == PackageManager.PERMISSION_GRANTED) ok = true;
+            geoCb.invoke(geoOrigin, ok, false);
+            geoCb = null;
+        }
     }
 
     @Override
@@ -105,7 +130,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String version() {
-            return "0.7.2";
+            return "0.7.3";
         }
 
         /* 실제 상품 검색 — 네이버 쇼핑 검색 API만 허용 (브라우저 CORS 제한 없이 앱에서 직접 호출) */

@@ -1,0 +1,17 @@
+{
+  "name": "팔도 제철맛길",
+  "short_name": "제철맛길",
+  "description": "전국 제철음식·맛집 지도 — 시·군·구별 추천 식당, 제철 달력, 산지 시세",
+  "lang": "ko",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f3ee",
+  "theme_color": "#1f4e79",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

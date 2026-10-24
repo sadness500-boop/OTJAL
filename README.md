@@ -1,7 +1,7 @@
 # OTJAL
 
 **나에게 잘 맞는 옷, OTJAL이 찾아준다.**
-AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.7.2**
+AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.7.3**
 
 ## 🌐 웹 버전 (크롬·엣지·사파리)
 
@@ -12,7 +12,7 @@ AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결
 ## 📱 Android 앱 다운로드
 
 - **[OTJAL.apk 내려받기](https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk)** (항상 최신 버전)
-- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.7.2.apk`)
+- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.7.3.apk`)
 - Android 5.0 이상 · 설치 시 "출처를 알 수 없는 앱 설치"를 한 번 허용해야 해요. iPhone은 아직 지원하지 않아요.
 
 ## 주요 기능
@@ -66,6 +66,10 @@ KEYSTORE=/경로/otjal-release.keystore KS_PASS=비밀번호 ./build-apk.sh
 - 3D 바디: [MakeHuman](https://github.com/makehumancommunity/makehuman) 기본 메시·체형 타깃·스켈레톤 가중치(CC0 1.0)를 가공해 사용. 피부·눈·머리 텍스처는 OTJAL에서 절차적으로 생성
 - Designed & Developed by **Rat Rae Choi**
 
+
+## 함께 즐기기 프로그램 (v0.7.3~)
+`web/apps/`에 오늘의 뽑기판(`ppopgi`)·팔도 제철맛길(`matgil`)·팔도 축제길(`festival`)이 설치되어 있어요. 화면 맨 아래 **Things to enjoy** 카드를 누르면 OTJAL 안에서 실행됩니다.
+프로그램을 새 버전으로 바꿀 때: 새 APK의 화면 파일(`assets/…/index.html` 등)을 해당 폴더에 덮어쓴 뒤 `python3 tools/install-apps.py` → `python3 tools/build-web.py` 순서로 실행하세요.
 
 ## 실제 판매 상품 연결 (v0.7.2~)
 OTJAL은 **네이버 쇼핑 검색 API**로 네이버 스마트스토어·11번가·G마켓·옥션·SSG·롯데ON·무신사·29CM·W컨셉·LF몰 등 여러 쇼핑몰의 실제 판매 상품을 모으고, "내 스타일"(체형·스타일·색상·상황·예산·추천 기준 중요도·쇼핑몰) 기준으로 점수를 매겨 **1~50위**를 보여줍니다. 카드의 "구매하러 가기"는 해당 상품 페이지로 바로 연결됩니다.

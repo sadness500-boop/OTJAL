@@ -11,6 +11,7 @@ CODE=$(echo "$VER" | awk -F. '{print $1*10000+$2*100+$3}')
 : "${KEYSTORE:?KEYSTORE 경로가 필요해요}"; : "${KS_PASS:?KS_PASS가 필요해요}"
 rm -rf build && mkdir -p build/gen build/obj build/assets/www/lib
 cp libs/*.js build/assets/www/lib/
+cp -r ../web/apps build/assets/www/apps   # 함께 즐기기 프로그램 3개
 python3 - "$VER" <<'PY'
 import sys
 src=open('../web/index.html',encoding='utf-8').read()

@@ -45,5 +45,7 @@ self.addEventListener("fetch",e=>{{ const u=new URL(e.request.url); if (e.reques
   else if (/fonts\\.(googleapis|gstatic)\\.com/.test(u.host)) e.respondWith(caches.open(C).then(c=>c.match(e.request).then(r=>r||fetch(e.request).then(res=>{{ c.put(e.request,res.clone()); return res; }}))));
 }});
 ''')
+# 함께 즐기기 프로그램 3개(번들 설치) — web/apps → docs/apps
+A=os.path.join(D,'apps'); shutil.rmtree(A,ignore_errors=True); shutil.copytree(os.path.join(ROOT,'web/apps'),A)
 open(os.path.join(D,'.nojekyll'),'w').write('')
 print('docs/ built', ver)

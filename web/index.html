@@ -136,7 +136,7 @@ h3{font-size:20px}
 .lookItem b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .total{font-size:16px;border-top:1px solid var(--line);padding-top:9px;display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
 .total b{font-weight:800}
-.pain{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.pain{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .pain div{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 20px}
 .pain b{font-size:17.5px;display:block;margin-bottom:4px;font-weight:800}
 .pain i{font-family:var(--f-display);font-style:italic;color:var(--gold);font-size:23px;display:block;line-height:1}
@@ -413,6 +413,22 @@ h1,h2{letter-spacing:-.02em}
 .script{font-weight:400}
 
 /* v0.6.0 — 실제 판매 상품 */
+.rcard.pv{cursor:pointer}.rcard.pv:hover{border-color:var(--acc);transform:translateY(-2px)}
+.pvbar{display:flex;align-items:center;gap:5px;padding:7px 10px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.pvbar i{width:7px;height:7px;border-radius:50%;background:var(--line)}.pvbar i:first-child{background:var(--acc)}
+.pvbar span{margin-left:6px;font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pvbody{min-height:150px;background:radial-gradient(120% 80% at 50% 25%,var(--stage1),var(--stage2));display:grid;place-items:center}
+.pvbody .fig.pvfig{width:100%;height:240px;background:transparent;border-radius:0}
+.pvform{width:100%;padding:14px;display:flex;flex-direction:column;gap:8px}
+.pvrow{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px;color:var(--ink2)}
+.pvrow b{height:6px;border-radius:999px;background:var(--chip);position:relative;overflow:hidden}.pvrow b::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);background:var(--acc);border-radius:inherit}
+.pvrow em{font-style:normal;font-variant-numeric:tabular-nums;font-weight:700}
+.pvchips{display:flex;gap:5px;flex-wrap:wrap}.pvchips span{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--acc);font-weight:700}
+.pvgrid{width:100%;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.pvgrid span{aspect-ratio:1;border-radius:12px;background:var(--surface);overflow:hidden;display:grid;place-items:center}
+.pvgrid span svg{width:76%;height:auto}
+.pvempty{font-size:14px;color:var(--muted);padding:20px;text-align:center}
+.pvgo{margin-top:2px;font-size:13.5px;color:var(--acc);font-weight:800}
+
 .lookItem{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px}
 .lookItem .ifind{white-space:nowrap;padding:4px 9px;font-size:13.5px}
 .lookItem b{white-space:normal!important;overflow:hidden;text-overflow:clip!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35}
@@ -535,7 +551,7 @@ h1,h2{letter-spacing:-.02em}
 <script>
 /* ===== OTJAL v0.4.0 — Designed & Developed by Rat Rae Choi ===== */
 const CREATOR = "Rat Rae Choi";
-const APP_NAME = "OTJAL", APP_VERSION = "0.7.0";
+const APP_NAME = "OTJAL", APP_VERSION = "0.7.1";
 const REPO_URL = "https://github.com/sadness500-boop/OTJAL";
 const APK_URL = "https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk";
 const $ = (s, r = document) => r.querySelector(s);
@@ -2002,16 +2018,21 @@ let railKey="";
 const bodySig=()=>{ const p=P(); return [p.height,p.weight,p.chest,p.waist,p.hip,p.skin,p.hair,p.hairColor].join(","); };
 function renderRails(){ const g=S.g, L=$("#railL"), Rr=$("#railR"), F=$("#mqFoot"); if (F) F.innerHTML=marquee(g);
   if (!L||!Rr) return; const hh=document.querySelector("header"); if (hh) document.documentElement.style.setProperty("--hdrH", hh.offsetHeight+"px");
-  const ro=realOn(g), key=g+"|"+bodySig()+"|"+(ro?Shop.info(g).at:0)+"|"+S.sites.length; if (key===railKey) return; railKey=key;
-  const arts=ART.list(g);
-  if (ro){ const top=Shop.rankTop(g,12);
-    const pc=(x,i)=>`<div class="rcard prod" role="button" tabindex="0" data-act="detail" data-id="${x.it.id}"><div class="pi"><img src="${esc(x.it.img)}" alt="${esc(x.it.name)}" loading="lazy" referrerpolicy="no-referrer"><b class="rk">${i+1}</b></div><div class="cap"><i>${won(x.it.price)}</i><span class="pn2">${esc(x.it.name)}</span><span class="pm2">${esc(x.it.mall)} · 매칭 ${x.sc.total}%</span></div></div>`;
-    const lh=`<div class="rtag"><b>REAL TOP 12</b><span>실제 판매 상품 · ${g==="F"?"WOMEN":"MEN"}</span></div>${top.map(pc).join("")}`;
-    L.innerHTML=`<div class="rv">OTJAL — REAL PRODUCTS — STYLE · FIT · SHOP</div><div class="rreel"><div class="rtrack">${lh}${lh}</div></div>`; }
-  else {
-  const lcard=(a,i)=>`<figure class="rcard art"><div class="ri">${a.svg}</div><figcaption><i>No.${String(i+1).padStart(2,"0")}</i>${a.cap}</figcaption></figure>`;
-  const lh=`<div class="rtag"><b>LOOKBOOK</b><span>2026 · ${g==="F"?"WOMEN":"MEN"}</span></div>${arts.map(lcard).join("")}<p class="rquote">옷이 아니라<br><em>나</em>를 고르는 시간</p>`;
-  L.innerHTML=`<div class="rv">OTJAL — STYLE · FIT · SHOP — ${new Date().getFullYear()}</div><div class="rreel"><div class="rtrack">${lh}${lh}<div class="rcard art" style="padding:14px"><b>실제 상품 준비 중</b><span class="small muted">곧 이 자리에 실제 판매 상품 TOP이 떠요.</span></div></div></div>`; }
+  const ro=realOn(g), key=[g,bodySig(),ro?Shop.info(g).at:0,S.sites.length,S.pick.occ,S.pick.i,S.coordOcc,S.wish.length,JSON.stringify(S.fit[g]),P().styles.join()].join("|"); if (key===railKey) return; railKey=key;
+  // 왼쪽: 프로그램 각 메뉴에 들어갔을 때의 화면 미리보기 (누르면 해당 메뉴로 이동)
+  const p=P(), pick=outfits(g,S.pick.occ,1)[0], co=outfits(g,S.coordOcc||"출근",2)[1]||pick, top=(realOn(g)?Shop.rankTop(g,4):ranked(g).slice(0,4)), wl=S.wish.map(id=>BYID[id]).filter(it=>it&&it.g===g).slice(0,4);
+  const win=(tab,title,desc,body)=>`<div class="rcard pv" role="button" tabindex="0" data-go="${tab}"><div class="pvbar"><i></i><i></i><i></i><span>OTJAL · ${title}</span></div><div class="pvbody">${body}</div><div class="cap"><i>${title}</i>${desc}<span class="pvgo">들어가기 →</span></div></div>`;
+  const fig=(look,th)=> look ? figHTML("snap",look,{},{cls:"rl pvfig",w:240,h:300,theta:th}) : "";
+  const bars=[["키",p.height+"cm",.62],["가슴",p.chest+"cm",.55],["허리",p.waist+"cm",.42],["엉덩이",p.hip+"cm",.6]].map(([k,v,w])=>`<div class="pvrow"><span>${k}</span><b style="--w:${Math.round(w*100)}%"></b><em>${v}</em></div>`).join("");
+  const grid=l=>`<div class="pvgrid">${l.map(x=>`<span>${thumb(x.it||x)}</span>`).join("")||"<span></span>"}</div>`;
+  const lh=`<div class="rtag"><b>OTJAL APP</b><span>메뉴 미리보기 · 눌러서 들어가기</span></div>`
+    + win("home","오늘의 PICK",`${S.pick.occ}룩 · 매칭 ${pick?pick.score:0}%`, fig(pick&&pick.look,.3))
+    + win("style","내 스타일",`${p.height}cm · ${p.styles.slice(0,2).join("·")}`, `<div class="pvform">${bars}<div class="pvchips">${p.styles.slice(0,3).map(s=>`<span>${s}</span>`).join("")}</div></div>`)
+    + win("recs","맞춤 추천",`TOP 50 · 1위 매칭 ${top[0]?top[0].sc.total:0}%`, grid(top))
+    + win("coordi","상황별 코디",`${S.coordOcc||"출근"}룩 코디`, fig(co&&co.look,-.35))
+    + win("fit","피팅룸","정면·측면·후면 360°", fig(Object.keys(curLook(g)).length?curLook(g):(pick&&pick.look),2.7))
+    + win("wish","찜",`${wl.length}개 담음`, wl.length?grid(wl):`<div class="pvempty">♡ 마음에 드는 옷을 담아 보세요</div>`);
+  L.innerHTML=`<div class="rv">OTJAL — STYLE · FIT · SHOP — ${new Date().getFullYear()}</div><div class="rreel"><div class="rtrack">${lh}${lh}</div></div>`;
   const occs=["출근","데이트","여행"].map(o=>{ const l=outfits(g,o,1)[0]; return l?{o,l}:null; }).filter(Boolean);
   const rh=`<div class="rtag"><b>TODAY'S LOOKS</b><span>내 체형 · 3D</span></div>${occs.map(({o,l})=>`<div class="rcard look" role="button" tabindex="0" data-act="railLook" data-o="${o}">${figHTML("snap",l.look,{},{cls:"rl",w:240,h:360,theta:.35})}<span class="cap"><i>${o}룩</i>${ro?"실제 상품 코디 · ":""}매칭 ${l.score}% · ${won(l.total)}</span></div>`).join("")}`;
   Rr.innerHTML=`<div class="rv">TODAY'S PICK — ${g==="F"?"FOR HER":"FOR HIM"} — 3D FITTING</div><div class="rreel still">${rh}</div>`; }
@@ -2046,7 +2067,6 @@ function vHome(){
   <div class="pain">
     <div><i>01</i><b>선택장애 해결</b><span class="small muted">수백 개 대신 매칭 점수가 높은 3개만, 그래도 고민되면 딱 하나만.</span></div>
     <div><i>02</i><b>3D 바디로 먼저 입어보기</b><span class="small muted">내 치수로 만든 3D 바디에 사이즈별로 입혀 정면·측면·후면으로 핏을 미리 봐요.</span></div>
-    <div><i>03</i><b>실제 상품 TOP 50</b><span class="small muted">네이버 스마트스토어·11번가·G마켓·옥션·SSG·롯데ON·무신사·29CM·W컨셉·LF몰 등의 실제 판매 상품을 내 스타일 기준 1~50위로.</span></div>
   </div>
   <div class="head"><div><div class="eyebrow">For you</div><h2>${Shop.has(g)&&Shop.configured()?"지금 나에게 잘 맞는 실제 상품":"지금 나에게 잘 맞는 아이템"}</h2></div><button class="btn" data-go="recs">${Shop.has(g)&&Shop.configured()?"실제 상품 TOP 50":"전체 추천 보기"}</button></div>
   ${realOn(g)?"":`<p class="note" style="margin:0">실제 판매 상품 데이터를 불러오는 동안 예시 상품으로 보여드려요.</p>`}
@@ -2320,7 +2340,7 @@ function vBrand(){
 
 /* ---------- 이벤트 ---------- */
 document.addEventListener("click", e => {
-  const b = e.target.closest("button, a[data-go], a[data-act], [role=button][data-act]"); if (!b) return;
+  const b = e.target.closest("button, a[data-go], a[data-act], [role=button][data-act], [role=button][data-go]"); if (!b) return;
   const d = b.dataset, g = S.g, p = P();
   if (d.go){ e.preventDefault(); go(d.go); return; }
   if (d.g){ S.g = d.g; save(); render(); return; }

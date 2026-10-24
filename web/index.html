@@ -413,6 +413,19 @@ h1,h2{letter-spacing:-.02em}
 .script{font-weight:400}
 
 /* v0.6.0 — 실제 판매 상품 */
+#cpNote:empty{display:none}
+footer .enjoy{flex-basis:100%;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 20px 20px;display:flex;flex-direction:column;gap:12px}
+footer .enjoy h2{margin:0;font-size:44px;line-height:1.1;color:var(--enjoyInk,#27306E);font-weight:400}
+:root[data-theme="dark"] footer .enjoy h2{color:#AEB6FF}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) footer .enjoy h2{color:#AEB6FF} }
+footer .egrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:820px){ footer .egrid{grid-template-columns:minmax(0,1fr)} }
+footer .ecard{display:flex;gap:14px;align-items:center;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:color-mix(in srgb,var(--bg2) 70%,#EEF0FA);text-decoration:none;color:var(--ink);transition:transform .15s,border-color .15s}
+footer .ecard:hover{transform:translateY(-2px);border-color:var(--acc)}
+footer .eic{flex:none;width:48px;height:48px;border-radius:12px;background:color-mix(in srgb,var(--surface) 60%,#E3E5F6);display:grid;place-items:center;font-size:26px}
+footer .etx{display:flex;flex-direction:column;gap:1px;min-width:0}
+footer .etx b{font-size:17px}footer .etx span{font-size:14.5px;color:var(--ink2)}footer .etx em{font-style:normal;font-weight:800;font-size:14.5px;color:var(--ink);margin-top:3px}
+
 .rcard.pv{cursor:pointer}.rcard.pv:hover{border-color:var(--acc);transform:translateY(-2px)}
 .pvbar{display:flex;align-items:center;gap:5px;padding:7px 10px;border-bottom:1px solid var(--line);background:var(--bg2)}
 .pvbar i{width:7px;height:7px;border-radius:50%;background:var(--line)}.pvbar i:first-child{background:var(--acc)}
@@ -538,6 +551,14 @@ h1,h2{letter-spacing:-.02em}
 
 <footer>
   <div class="wrap">
+    <section class="enjoy" aria-label="Things to enjoy">
+      <h2 class="script">Things to enjoy</h2>
+      <div class="egrid">
+        <a class="ecard" href="https://claude.ai/artifact/DtoEMu4Cpc5Y9Xv5BQPXAe" target="_blank" rel="noopener"><span class="eic" aria-hidden="true">🎲</span><span class="etx"><b>오늘의 뽑기판</b><span>모임에서 쓰는 사다리·뽑기 미니게임</span><em>바로 가기 ↗</em></span></a>
+        <a class="ecard" href="https://claude.ai/artifact/Q5dRkkWywE6GmPSDtzRzTU" target="_blank" rel="noopener"><span class="eic" aria-hidden="true">🍲</span><span class="etx"><b>팔도 제철맛길</b><span>전국 제철음식·맛집 지도</span><em>바로 가기 ↗</em></span></a>
+        <a class="ecard" href="https://claude.ai/artifact/EjwkFZc8icMQxRomqXCfhu" target="_blank" rel="noopener"><span class="eic" aria-hidden="true">🎉</span><span class="etx"><b>팔도 축제길</b><span>지역·계절·월별 전국 축제 지도</span><em>바로 가기 ↗</em></span></a>
+      </div>
+    </section>
     <div class="fbrand"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#logoMark"/></svg><div><b class="fwm">OT<i>J</i>AL</b><span id="footVer">AI Personal Fashion Stylist &amp; Shopping Assistant</span></div></div>
     <p class="small muted" id="cpNote" style="margin:0;flex-basis:100%"></p>
     <div class="sig"><span class="by">Designed &amp; Developed by</span><span class="script">Rat Rae Choi</span></div>
@@ -551,7 +572,7 @@ h1,h2{letter-spacing:-.02em}
 <script>
 /* ===== OTJAL v0.4.0 — Designed & Developed by Rat Rae Choi ===== */
 const CREATOR = "Rat Rae Choi";
-const APP_NAME = "OTJAL", APP_VERSION = "0.7.1";
+const APP_NAME = "OTJAL", APP_VERSION = "0.7.2";
 const REPO_URL = "https://github.com/sadness500-boop/OTJAL";
 const APK_URL = "https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk";
 const $ = (s, r = document) => r.querySelector(s);

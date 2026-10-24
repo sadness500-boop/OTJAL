@@ -3,3 +3,4 @@ android/build/
 *.jks
 *.idsig
 .DS_Store
+desktop/www/

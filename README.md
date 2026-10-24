@@ -1,7 +1,7 @@
 # OTJAL
 
 **나에게 잘 맞는 옷, OTJAL이 찾아준다.**
-AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.6.4**
+AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결 서비스 — 현재 버전 **v0.7.0**
 
 ## 🌐 웹 버전 (크롬·엣지·사파리)
 
@@ -12,7 +12,7 @@ AI 개인 맞춤형 의류 추천·3D 실사 바디 가상 피팅·쇼핑 연결
 ## 📱 Android 앱 다운로드
 
 - **[OTJAL.apk 내려받기](https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk)** (항상 최신 버전)
-- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.6.4.apk`)
+- 버전별 파일: [`release/`](release/) 폴더 (예: `OTJAL-v0.7.0.apk`)
 - Android 5.0 이상 · 설치 시 "출처를 알 수 없는 앱 설치"를 한 번 허용해야 해요. iPhone은 아직 지원하지 않아요.
 
 ## 주요 기능
@@ -67,7 +67,7 @@ KEYSTORE=/경로/otjal-release.keystore KS_PASS=비밀번호 ./build-apk.sh
 - Designed & Developed by **Rat Rae Choi**
 
 
-## 실제 판매 상품 연결 (v0.6.4~)
+## 실제 판매 상품 연결 (v0.7.0~)
 OTJAL은 **네이버 쇼핑 검색 API**로 네이버 스마트스토어·11번가·G마켓·옥션·SSG·롯데ON·무신사·29CM·W컨셉·LF몰 등 여러 쇼핑몰의 실제 판매 상품을 모으고, "내 스타일"(체형·스타일·색상·상황·예산·추천 기준 중요도·쇼핑몰) 기준으로 점수를 매겨 **1~50위**를 보여줍니다. 카드의 "구매하러 가기"는 해당 상품 페이지로 바로 연결됩니다.
 
 1. [네이버 개발자센터](https://developers.naver.com/apps/#/register) → Application 등록 → 사용 API **검색** → 비로그인 오픈 API 서비스 환경 **WEB**: `https://sadness500-boop.github.io`
@@ -82,3 +82,10 @@ OTJAL은 **네이버 쇼핑 검색 API**로 네이버 스마트스토어·11번�
 - **B. 쿠팡 파트너스 Open API** — 최종 승인 후 발급받은 키를 저장소 Secrets `COUPANG_ACCESS_KEY`, `COUPANG_SECRET_KEY`에 등록하면 6시간마다 자동 수집합니다(검색 호출 한도 때문에 실행마다 9개 키워드씩 돌아가며 수집, 10일 보관).
 - 네이버 쇼핑 검색 API는 2026년 7월 종료되어 더 이상 사용하지 않습니다.
 - 쿠팡 상품이 있으면 앱에 파트너스 수수료 안내 문구가 표시됩니다.
+
+
+## PC 프로그램 (Windows)
+- 다운로드: [`release/OTJAL-PC.exe`](release/OTJAL-PC.exe) — 설치 없이 더블클릭으로 실행 (Windows 10/11)
+- Microsoft Edge WebView2 런타임을 사용합니다(Windows 10/11 대부분 기본 설치). 없으면 실행 시 설치 페이지를 안내합니다.
+- 처음 실행 시 "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**을 누르세요(코드 서명 인증서가 없는 개인 배포 프로그램이라 나타납니다).
+- 빌드: `tools/build-desktop.sh` (Go로 교차 컴파일, 웹앱을 실행 파일에 포함)

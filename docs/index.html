@@ -505,7 +505,7 @@ footer .etx b{font-size:17px}footer .etx span{font-size:14.5px;color:var(--ink2)
 <header>
   <div class="wrap">
     <div class="util">
-      <button class="ubtn" data-act="qr" aria-label="앱 다운로드 QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M17 20h4M20 17v4"/></svg><span>앱 다운로드 QR</span></button>
+      <button class="ubtn" data-act="qr" aria-label="다운로드 QR"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M17 20h4M20 17v4"/></svg><span>다운로드 QR</span></button>
       <button class="ubtn" data-act="refer" aria-label="친구 추천"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M18 7v6M15 10h6"/></svg><span>친구 추천</span></button>
       <div class="seg" role="group" aria-label="화면 모드" id="themeSeg">
         <button data-theme-set="light">주간</button><button data-theme-set="dark">야간</button><button data-theme-set="system">시스템</button>
@@ -586,9 +586,10 @@ footer .etx b{font-size:17px}footer .etx span{font-size:14.5px;color:var(--ink2)
 <script>
 /* ===== OTJAL v0.4.0 — Designed & Developed by Rat Rae Choi ===== */
 const CREATOR = "Rat Rae Choi";
-const APP_NAME = "OTJAL", APP_VERSION = "0.7.3";
+const APP_NAME = "OTJAL", APP_VERSION = "0.7.4";
 const REPO_URL = "https://github.com/sadness500-boop/OTJAL";
 const APK_URL = "https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk";
+const SITE_URL = "https://sadness500-boop.github.io/OTJAL/docs/";   // 북마크용 OTJAL 사이트 주소
 const $ = (s, r = document) => r.querySelector(s);
 const won = n => n.toLocaleString("ko-KR") + "원";
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1907,22 +1908,23 @@ function openShop(items, title){
   if (Shop.configured()) items.forEach((it,i)=>{ if (it.real) return; Shop.similar(it,3).then(l=>{ const el=$("#alt"+i); if (el) el.innerHTML = l.length? l.map((x,k)=>prodRow(x,k+1)).join("") : `<p class="note">비슷한 상품을 찾지 못했어요.</p>`; }).catch(err=>{ const el=$("#alt"+i); if (el) el.innerHTML=`<p class="note">${esc(err.message)}</p>`; }); });
 }
 function qrSVG(text){ try { const q=qrcode(0,"M"); q.addData(text); q.make(); return q.createSvgTag(5,2); } catch(e){ return `<p class="small">${esc(text)}</p>`; } }
-function referText(){ return `옷 고를 때 고민된다면 OTJAL!\n내 치수로 만든 3D 바디에 입혀 360° 돌려 보고, 여러 쇼핑몰의 실제 판매 상품 중 나에게 맞는 옷만 1~50위로 골라줘요.\n추천코드: ${S.refCode}\nAndroid 앱 다운로드: ${APK_URL}`; }
+function referText(){ return `추천코드: ${S.refCode}\nOTJAL 사이트 주소(북마크해 두세요): ${SITE_URL}`; }
 function openQR(){ const d=$("#shopDlg"); d.classList.remove("wide");
-  $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">Download</div><h3>OTJAL 앱 다운로드</h3></div><button class="btn sm" data-close>닫기</button></div>
-  <div class="qrbox"><div class="qr">${qrSVG(APK_URL)}</div><div class="fs" style="gap:8px">
-    <p style="margin:0">휴대폰 카메라로 QR을 비추면 Android 앱(APK)을 내려받을 수 있어요.</p>
-    <p class="note" style="margin:0">v${APP_VERSION} · Android 5.0 이상 · 설치할 때 "출처를 알 수 없는 앱 설치"를 한 번 허용해야 해요. iPhone은 아직 지원하지 않아요.</p>
-    <div class="chips"><a class="btn sm pri" href="${APK_URL}" target="_blank" rel="noopener">APK 바로 받기</a><a class="btn sm" href="${REPO_URL}" target="_blank" rel="noopener">GitHub 저장소</a></div>
+  $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">Bookmark</div><h3>OTJAL 사이트 주소</h3></div><button class="btn sm" data-close>닫기</button></div>
+  <div class="qrbox"><div class="qr">${qrSVG(SITE_URL)}</div><div class="fs" style="gap:8px">
+    <p style="margin:0">휴대폰 카메라로 QR을 비추면 OTJAL 사이트가 열려요. 북마크(즐겨찾기)나 홈 화면에 추가해 두고 바로 쓰세요.</p>
+    <div class="copybox" id="siteUrl" style="word-break:break-all">${esc(SITE_URL)}</div>
+    <div class="chips"><a class="btn sm pri" href="${SITE_URL}" target="_blank" rel="noopener">사이트 열기</a><button class="btn sm" data-act="copySite">주소 복사</button></div>
+    <p class="note" style="margin:0" id="siteNote">PC·휴대폰 어디서나 같은 주소로 열 수 있어요.</p>
   </div></div>`;
   if (!d.open) d.showModal(); }
 function openRefer(){ const d=$("#shopDlg"); d.classList.remove("wide");
   $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">Invite friends</div><h3>친구에게 OTJAL 추천하기</h3></div><button class="btn sm" data-close>닫기</button></div>
-  <div class="qrbox"><div class="qr">${qrSVG(APK_URL)}</div><div class="fs" style="gap:10px">
+  <div class="qrbox"><div class="qr">${qrSVG(SITE_URL)}</div><div class="fs" style="gap:10px">
     <div><div class="sub">내 추천코드</div><div class="pbig" style="letter-spacing:.06em">${S.refCode}</div></div>
     <div class="copybox" id="referMsg">${esc(referText())}</div>
     <div class="chips"><button class="btn sm pri" data-act="share">공유하기</button><button class="btn sm" data-act="copyRefer">메시지 복사</button></div>
-    <p class="note" style="margin:0" id="referNote">카카오톡·문자 등에 붙여넣어 보내 보세요. 친구가 QR을 찍어도 바로 받을 수 있어요.</p>
+    <p class="note" style="margin:0" id="referNote">카카오톡·문자 등에 붙여넣어 보내 보세요. 친구가 QR을 찍으면 OTJAL 사이트가 바로 열려요.</p>
   </div></div>`;
   if (!d.open) d.showModal(); }
 function copyText(t, noteEl){ const done=()=>{ if (noteEl) noteEl.textContent="복사했어요. 원하는 곳에 붙여넣어 주세요."; };
@@ -2407,6 +2409,7 @@ document.addEventListener("click", e => {
     case "qr": openQR(); break;
     case "refer": openRefer(); break;
     case "copyRefer": copyText(referText(), $("#referNote")); break;
+    case "copySite": copyText(SITE_URL, $("#siteNote")); break;
     case "share": { const t=referText(); try { if (window.OTJALApp && OTJALApp.share){ OTJALApp.share(t); break; } } catch(e){}
       if (navigator.share) navigator.share({title:"OTJAL", text:t}).catch(()=>copyText(t,$("#referNote"))); else copyText(t,$("#referNote")); break; }
     case "estimate": estimateBody(); save(); render(); break;

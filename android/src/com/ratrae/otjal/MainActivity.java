@@ -130,7 +130,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String version() {
-            return "0.7.3";
+            return "0.7.4";
         }
 
         /* 실제 상품 검색 — 네이버 쇼핑 검색 API만 허용 (브라우저 CORS 제한 없이 앱에서 직접 호출) */

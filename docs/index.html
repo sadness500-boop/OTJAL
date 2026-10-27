@@ -586,7 +586,7 @@ footer .etx b{font-size:17px}footer .etx span{font-size:14.5px;color:var(--ink2)
 <script>
 /* ===== OTJAL v0.4.0 — Designed & Developed by Rat Rae Choi ===== */
 const CREATOR = "Rat Rae Choi";
-const APP_NAME = "OTJAL", APP_VERSION = "0.7.4";
+const APP_NAME = "OTJAL", APP_VERSION = "0.7.5";
 const REPO_URL = "https://github.com/sadness500-boop/OTJAL";
 const APK_URL = "https://github.com/sadness500-boop/OTJAL/raw/main/release/OTJAL.apk";
 const SITE_URL = "https://sadness500-boop.github.io/OTJAL/docs/";   // 북마크용 OTJAL 사이트 주소
@@ -1908,7 +1908,7 @@ function openShop(items, title){
   if (Shop.configured()) items.forEach((it,i)=>{ if (it.real) return; Shop.similar(it,3).then(l=>{ const el=$("#alt"+i); if (el) el.innerHTML = l.length? l.map((x,k)=>prodRow(x,k+1)).join("") : `<p class="note">비슷한 상품을 찾지 못했어요.</p>`; }).catch(err=>{ const el=$("#alt"+i); if (el) el.innerHTML=`<p class="note">${esc(err.message)}</p>`; }); });
 }
 function qrSVG(text){ try { const q=qrcode(0,"M"); q.addData(text); q.make(); return q.createSvgTag(5,2); } catch(e){ return `<p class="small">${esc(text)}</p>`; } }
-function referText(){ return `추천코드: ${S.refCode}\nOTJAL 사이트 주소(북마크해 두세요): ${SITE_URL}`; }
+function referText(){ return `OTJAL 사이트 주소(북마크해 두세요): ${SITE_URL}`; }
 function openQR(){ const d=$("#shopDlg"); d.classList.remove("wide");
   $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">Bookmark</div><h3>OTJAL 사이트 주소</h3></div><button class="btn sm" data-close>닫기</button></div>
   <div class="qrbox"><div class="qr">${qrSVG(SITE_URL)}</div><div class="fs" style="gap:8px">
@@ -1919,12 +1919,12 @@ function openQR(){ const d=$("#shopDlg"); d.classList.remove("wide");
   </div></div>`;
   if (!d.open) d.showModal(); }
 function openRefer(){ const d=$("#shopDlg"); d.classList.remove("wide");
-  $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">Invite friends</div><h3>친구에게 OTJAL 추천하기</h3></div><button class="btn sm" data-close>닫기</button></div>
-  <div class="qrbox"><div class="qr">${qrSVG(SITE_URL)}</div><div class="fs" style="gap:10px">
-    <div><div class="sub">내 추천코드</div><div class="pbig" style="letter-spacing:.06em">${S.refCode}</div></div>
-    <div class="copybox" id="referMsg">${esc(referText())}</div>
-    <div class="chips"><button class="btn sm pri" data-act="share">공유하기</button><button class="btn sm" data-act="copyRefer">메시지 복사</button></div>
-    <p class="note" style="margin:0" id="referNote">카카오톡·문자 등에 붙여넣어 보내 보세요. 친구가 QR을 찍으면 OTJAL 사이트가 바로 열려요.</p>
+  $("#shopBody").innerHTML = `<div class="head"><div><div class="eyebrow">Invite friends · Bookmark</div><h3>친구에게 OTJAL 사이트 알려주기</h3></div><button class="btn sm" data-close>닫기</button></div>
+  <div class="qrbox"><div class="qr">${qrSVG(SITE_URL)}</div><div class="fs" style="gap:8px">
+    <p style="margin:0">친구가 휴대폰 카메라로 QR을 비추면 OTJAL 사이트가 열려요. 북마크(즐겨찾기)나 홈 화면에 추가해 두고 바로 쓰면 돼요.</p>
+    <div class="copybox" id="referMsg" style="word-break:break-all">${esc(SITE_URL)}</div>
+    <div class="chips"><button class="btn sm pri" data-act="share">주소 공유하기</button><button class="btn sm" data-act="copySite">주소 복사</button><a class="btn sm" href="${SITE_URL}" target="_blank" rel="noopener">사이트 열기</a></div>
+    <p class="note" style="margin:0" id="siteNote">카카오톡·문자 등에 붙여넣어 보내 보세요.</p>
   </div></div>`;
   if (!d.open) d.showModal(); }
 function copyText(t, noteEl){ const done=()=>{ if (noteEl) noteEl.textContent="복사했어요. 원하는 곳에 붙여넣어 주세요."; };
@@ -2411,7 +2411,7 @@ document.addEventListener("click", e => {
     case "copyRefer": copyText(referText(), $("#referNote")); break;
     case "copySite": copyText(SITE_URL, $("#siteNote")); break;
     case "share": { const t=referText(); try { if (window.OTJALApp && OTJALApp.share){ OTJALApp.share(t); break; } } catch(e){}
-      if (navigator.share) navigator.share({title:"OTJAL", text:t}).catch(()=>copyText(t,$("#referNote"))); else copyText(t,$("#referNote")); break; }
+      if (navigator.share) navigator.share({title:"OTJAL", text:t, url:SITE_URL}).catch(()=>copyText(SITE_URL,$("#siteNote"))); else copyText(SITE_URL,$("#siteNote")); break; }
     case "estimate": estimateBody(); save(); render(); break;
     case "budgetPreset": { const f=+d.v, base=g==="F"?{top:60000,bottom:60000,dress:80000,outer:160000,shoes:80000,bag:70000}:{top:60000,bottom:70000,dress:80000,outer:180000,shoes:100000,bag:90000};
       for (const k in base) p.budget[k]=Math.round(base[k]*f/5000)*5000; save(); render(); break; }
